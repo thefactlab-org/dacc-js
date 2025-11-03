@@ -1,0 +1,103 @@
+# Verify session Time (verifySessionTimeWalletWithJWT) [A function Verify JWT Session Token]
+
+The `verifySessionTimeWalletWithJWT` function **verifies and extracts wallet data from JWT session token**. It validates JWT signature, checks expiration time, and returns decrypted wallet credentials if valid.
+
+:::info
+It's recommended to retrieve JWT tokens ([allowSessionTimeWalletWithJWT](/functions/session-wallet/create-time-jwt)) from cookies that were previously stored privately and securely **using HTTP-only/In-memory cookies in web browsers** for verification and usage.
+:::
+:::warning
+The JWT token contains sensitive wallet access credentials. **Ensure the application is trustworthy and doesn't store JWT**
+:::
+
+## Import
+
+```ts 
+import { verifySessionTimeWalletWithJWT } from "dacc-js";
+```
+
+## Usage
+
+```ts 
+import { verifySessionTimeWalletWithJWT } from "dacc-js";
+
+const walletJWT = await verifySessionTimeWalletWithJWT({
+  jwt: 'eyJhZGRyZXNz...',
+  jwtSecret: 'jwt-secret-to-app'
+});
+
+console.log(walletJWT); // {address: '0x123...', privateKey: '0xabc...'} or null
+console.log(walletJWT?.address); // 0x123address...
+console.log(walletJWT?.privateKey); // 0xabcprivatekey...
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`jwt`** | `string` | The JWT token to verify. |
+| **`jwtSecret`** | `string` | Secret key used for JWT verification and decryption. |
+
+## Return Value
+Returns wallet object with `address` and `privateKey`, or `null` if invalid/expired.
+
+## Parameters
+
+### jwt
+
+- **Type:** `string`
+
+The JWT token to verify.
+
+```ts
+const walletJWT = await verifySessionTimeWalletWithJWT({
+  jwt: 'eyJhZGRyZXNz...', // [!code focus]
+  jwtSecret: 'jwt-secret-to-app'
+});
+```
+
+### jwtSecret
+
+- **Type:** `string`
+
+Secret key used for JWT verification and decryption.
+
+:::warning
+Must be the same secret used in [allowSessionTimeWalletWithJWT](/functions/session-wallet/create-time-jwt#jwtsecret).
+:::
+
+```ts
+const walletJWT = await verifySessionTimeWalletWithJWT({
+  jwt: 'eyJhZGRyZXNz...',
+  jwtSecret: 'jwt-secret-to-app' // [!code focus]
+});
+```
+
+## Examples
+
+### Complete session workflow (Create → Verify)
+
+```ts
+import { allowSessionTimeWalletWithJWT, verifySessionTimeWalletWithJWT } from "dacc-js";
+
+// Step 1: Create session token from encrypted wallet
+const sessionJWT = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  jwtSecret: 'jwt-secret-to-app',
+  maxAgeSeconds: 3600 // 1 hour
+});
+
+console.log(`Session created: ${sessionJWT}`); // eyJhZGRyZXNz...
+
+// Step 2: Later, verify the session token
+const walletJWT = await verifySessionTimeWalletWithJWT({
+  jwt: sessionJWT,
+  jwtSecret: 'jwt-secret-to-app'
+});
+
+if (walletJWT) {
+  console.log(`Address: ${walletJWT.address}`); // 0x123...
+  console.log(`Private Key: ${walletJWT.privateKey}`); // 0xabc...
+} else {
+  console.log('Session expired or invalid');
+}
+```

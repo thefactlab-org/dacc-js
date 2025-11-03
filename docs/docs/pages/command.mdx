@@ -1,0 +1,147 @@
+# Command [CLI for Quickly create a Dacc wallet]
+
+Dacc-js CLI provides a simple command-line interface for quickly creating and managing private Dacc wallets.
+
+## Installation
+:::note
+To use CLI Commands, you'll need to install it globally `-g` is a [global](https://docs.npmjs.com/cli/v9/commands/npm-install#global-installation) package installation. <br/>
+*After installing, you can call `dacc` from your terminal using the available commands*
+:::
+
+  :::code-group
+ 
+    ```bash [npm]
+    npm i -g dacc-js
+
+    ```
+
+    ```bash [bun]
+    bun add -g dacc-js
+    ```
+ 
+    ```bash [yarn]
+    yarn add -g dacc-js
+    ```
+    
+    ```bash [pnpm]
+    pnpm add -g dacc-js
+    ```
+  :::
+
+## Commands
+
+### dacc create
+
+Creates a new Dacc wallet with password encryption.
+
+#### Usage
+
+```bash
+dacc create [options]
+```
+
+#### Options
+
+| Option | Description |
+|--------|-------------|
+| `-p, --password <string>` | Password for wallet encryption (prompted if not provided) |
+| `-s, --save <path>` | Save wallet to file (optional) |
+
+#### Examples
+
+**Interactive creation (password prompt):**
+```bash
+dacc create
+```
+
+**With password flag:**
+```bash
+dacc create --password your-secure-password
+```
+
+**Create and save to file:**
+```bash
+dacc create --password your-secure-password --save ./dacc-wallet.json
+```
+
+**Advanced Usage:**
+```bash
+dacc create -p your-secure-password -s ./dacc-wallet.json
+```
+
+#### Output
+
+```
+✅ Wallet created successfully!
+Address: 0x1234...5678
+DaccPublicKey: daccPublickey_ABC123...
+💾 Saved to: /path/to/dacc-wallet.json
+```
+
+The wallet file contains:
+```json
+{
+  "address": "0x1234...5678",
+  "daccPublickey": "daccPublickey_ABC123..."
+}
+```
+
+---
+
+### dacc allow
+
+Decrypts and recovers a Dacc wallet using the daccPublicKey.
+
+#### Usage
+
+```bash
+dacc allow [daccPublickey] [options]
+```
+
+#### Options
+
+| Option | Description |
+|--------|-------------|
+| `-f, --file <path>` | Path to wallet file (JSON, .txt, .md, etc.) |
+| `-p, --password <string>` | Password to decrypt wallet (prompted if not provided) |
+
+#### Examples
+
+**Decrypt with daccPublicKey directly:**
+```bash
+dacc allow daccPublickey_0x123_XxX
+```
+
+**With password flag:**
+```bash
+dacc allow daccPublickey_0x123_XxX --password your-secure-password
+```
+
+**Load from wallet file:**
+```bash
+dacc allow --file ./dacc-wallet.json
+```
+
+**Load from file with password:**
+```bash
+dacc allow --file ./dacc-wallet.json --password your-secure-password
+```
+
+**Advanced Usage:**
+```bash
+dacc allow daccPublickey_0x123_XxX -p your-secure-password
+```
+
+#### Output
+
+```
+✅ Wallet decrypted successfully!
+Address: 0x1234...5678
+Private Key: 0xabcd...ef01
+```
+
+## Notes
+
+- If no `daccPublickey` is provided, the CLI will attempt to read it from the file specified with `--file`
+- The CLI can parse daccPublicKey from various file formats (JSON, plain text, markdown)
+- Password prompts will appear interactively if not provided via the `-p` flag

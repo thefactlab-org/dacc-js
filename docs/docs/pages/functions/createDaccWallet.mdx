@@ -1,0 +1,165 @@
+# createDaccWallet [A function to create a Wallet]
+
+The `createDaccWallet` function is the cornerstone of `dacc-js`. Its primary role is to **generate a new wallet**, encrypt its Private Key using the user's password, and return the wallet's public address along with the encrypted key for secure storage.
+
+## Import
+
+```ts 
+import { createDaccWallet } from "dacc-js";
+```
+## Usage
+
+```ts 
+import { createDaccWallet } from "dacc-js";
+
+const wallet = await createDaccWallet({
+ passwordSecretkey: 'my+Password#123..',
+//  publicEncryption: true,
+//  dataStorageNetwork: 'opSepolia',
+//  pkWalletForSaveData: 'ENV.0XPRIVATEKEY_GAS..',
+//  minPassword: 24
+});
+
+console.log("wallet:", wallet); // {address, daccPublickey}
+console.log("wallet address:", wallet?.address); // 0x123address... (recall)
+console.log("wallet daccPublickey:", wallet?.daccPublickey); // daccPublickey_XxX... (keep)
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`passwordSecretkey`** | `string` | The user's password used as the key for encryption. |
+| **`publicEncryption`** | `boolean` | Enable or disable public encryption (default: false). *default: false, no retrospective recording will be performed with `readDaccWallet`*. |
+| **`dataStorageNetwork`** | `string` (keyof) - SELECT or `customChain{}` | The blockchain network (e.g., 'opSepolia') to store the encrypted data is on-chain. |
+| **`pkWalletForSaveData`** | `0x${string}` | The **Private Key of an existing wallet** used to pay for gas when submitting the encrypted data to the blockchain (required if `dataStorageNetwork` is set). |
+| **`minPassword`, `maxPassword`** | `number` | Optional settings to define the minimum/maximum password length (defaults: 6 and 64). |
+
+## Return Value
+The response result is an object containing. `{address, daccPublickey}`
+
+## Parameters
+
+### passwordSecretkey
+
+- **Type:** `string`
+
+You set a password.
+
+:::info
+Your password should be long and contain uppercase letters and special characters, including numbers.
+:::
+
+```ts
+const wallet = await createDaccWallet({
+ passwordSecretkey: 'myPassword#123...', // [!code focus]
+});
+```
+
+### publicEncryption (optional)
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Configure the public encryption mode setting.
+
+:::warning
+Enabling this mode carries inherent risks that you accept. **Please set the strongest possible password for your wallet**.
+:::
+
+```ts
+const wallet = await createDaccWallet({
+ passwordSecretkey: 'my+Password#123...',
+ publicEncryption: true // [!code focus] default = false
+ dataStorageNetwork: 'opSepolia', // [!code ++] required for this mode
+ pkWalletForSaveData: 'ENV.0XPRIVATEKEY_GAS...' // [!code ++] required for this mode
+});
+```
+
+### dataStorageNetwork (optional)
+
+- **Type:** `string` (keyof) | `customChain{ chain: Chain, contract: 0x${string}}`
+
+Select supported networks.
+
+:::note
+You can set [publicEncryption](#publicencryption-optional) = **true** to enables this mode ([readDaccWallet](/functions/readDaccWallet) will work).
+:::
+
+::::note
+When using [customChain](/concept/mechanical#custom-networks) instead of specifying a network name:
+- Ensure the defined `chain` has correct configuration (RPC URL, Chain ID etc..)
+- The `contract` address must be a Smart Contract already deployed on that chain
+ 
+:::details[Custom Chain Network]
+```ts
+import { defineChain } from "viem";
+
+const myCustomChain = defineChain({
+  id: 123456,
+  name: "My Custom Chain",
+  network: "myCustomChain",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc-example.com"] }
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer-example.com' },
+  },
+});
+```
+:::
+::::
+
+```ts
+const wallet = await createDaccWallet({
+ passwordSecretkey: 'myPassword#123...', 
+ publicEncryption: true, // [!code ++] required for this mode
+ dataStorageNetwork: 'opSepolia', // [!code focus]
+//   dataStorageNetwork: { 
+//     customChain: { // [!code hl] For Custom Chain Network
+//       chain: myCustomChain, // [!code hl]
+//       contract: "0xYourDeployDaccWalletStorageOnChainAddress..", [!code hl]
+//     }, // [!code hl]
+//   },
+ pkWalletForSaveData: 'ENV.0XPRIVATEKEY_GAS...', // [!code ++] required for this mode
+});
+```
+
+### pkWalletForSaveData (optional)
+
+- **Type:** `0x${string}`
+
+Specify a private key for the wallet creation to save the public key encryption data retrospectively.
+
+:::info
+The wallet on that network must have enough gas coins to complete the transaction. `dataStorageNetwork`
+:::
+:::warning
+The desired wallet private key should be used with caution, never disclosed, stored securely in a transaction app set to `.env` file.
+:::
+
+```ts
+const wallet = await createDaccWallet({
+ passwordSecretkey: 'myPassword#123...', 
+ dataStorageNetwork: 'opSepolia', 
+ pkWalletForSaveData: 'ENV.0XPRIVATEKEY_GAS..', // [!code focus] ENV.SECRET
+});
+```
+
+### minPassword & maxPassword (optional)
+
+- **Type:** `number`
+- **Default:** `12` (min), `120` (max)
+
+Configure the password length setting.
+
+```ts
+const wallet = await createDaccWallet({
+ passwordSecretkey: 'myPassword#123',
+//  publicEncryption: true,
+//  dataStorageNetwork: 'opSepolia', 
+//  pkWalletForSaveData: '0xprivatekeyGas..',
+ minPassword: 24 // [!code focus] default = 12
+ maxPassword: 240 // [!code focus] default = 120
+});
+```

@@ -1,0 +1,261 @@
+# Sign Authorize EIP-7702 (daccSignAuthorizeEIP7702) [A function to sign EIP-7702 authorization for smart contract delegation]
+
+The `daccSignAuthorizeEIP7702` function allows you to **sign EIP-7702 authorization** from a Dacc wallet. This creates authorization signatures that allow smart contracts to control your wallet account using EIP-7702 delegation, enabling account abstraction features on externally owned accounts (EOA).
+
+## Import
+
+```ts 
+import { daccSignAuthorizeEIP7702 } from "dacc-js";
+```
+
+## Usage
+
+```ts 
+import { daccSignAuthorizeEIP7702 } from "dacc-js";
+// [!code word:optimismSepolia]
+import { optimismSepolia } from "viem/chains"; // used `viem` - npm i viem
+
+const result = await daccSignAuthorizeEIP7702({
+  // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  // address: "0xYourAccountAddress..", // Only the address created is set to `publicEncryption: true`
+  passwordSecretkey: 'my+Password#123..',
+  network: optimismSepolia,
+  contractAddress: '0xcontract...'
+});
+
+console.log(result); // {authorization, chainId, from, contractAddress}
+console.log(result?.authorization); // EIP-7702 authorization signature
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`account`** | `Account` or `0x${string}` | Conditional: The account to use for signing (Account object is private key). |
+| **`daccPublickey`** | `string` | Conditional: The encrypted wallet data from `createDaccWallet`. |
+| **`address`** | `0x${string}` | Conditional: wallet address from a created with `createDaccWallet` in `publicEncryption: true` mode (can use instead of daccPublickey). |
+| **`passwordSecretkey`** | `string` | Conditional: The user's password used to decrypt the wallet. |
+| **`network`** | `Chain` | The blockchain network to use for signing. |
+| **`contractAddress`** | `0x${string}` | The smart contract address to authorize for delegation. |
+
+## Return Value
+The response result is an object containing `{authorization, chainId, from, contractAddress}`
+
+## Parameters
+
+### account (conditional)
+
+- **Type:** `Account` | `0x${string}`
+
+The user's account to use for signing the authorization.
+
+:::note
+When using the `account` parameter, you **don't need** to provide `address`, `daccPublickey`, or `passwordSecretkey`. The account contains the private key needed for signing directly.
+:::
+
+```ts
+const result = await daccSignAuthorizeEIP7702({
+  account: "0xPrivatekey...", // [!code focus]
+//   address: '0x123...', // [!code --]
+//   daccPublickey: 'daccPublickey_0x123_XxX..', // [!code --]
+//   passwordSecretkey: 'my+Password#123..', // [!code --]
+  network: optimismSepolia,
+  contractAddress: '0xcontract...'
+});
+```
+
+### daccPublickey (conditional)
+
+- **Type:** `string`
+
+The user's encrypted public key to address.
+
+> *daccPublickey is the most reliable addressing solution and supports all types of data storage using `daccPublickey`.*
+
+:::note
+When using `daccPublickey`, you **must also provide** `passwordSecretkey` to decrypt the wallet., Remove the `account` parameter when using this method.
+:::
+
+```ts
+const result = await daccSignAuthorizeEIP7702({
+//   account: "0xPrivatekey...", // [!code --]
+  daccPublickey: 'daccPublickey_0x123_XxX..', // [!code focus]
+  passwordSecretkey: 'my+Password#123..', // [!code ++]
+  network: optimismSepolia,
+  contractAddress: '0xcontract...'
+});
+```
+*daccPublickey is the most reliable addressing solution and supports all types of data storage using `daccPublickey`.*
+
+### address (optional)
+
+- **Type:** `0x${string}`
+
+The encrypted wallet data returned from `createDaccWallet`.
+
+:::note
+When using `address`, you **must also provide** `passwordSecretkey` to decrypt the wallet. Remove the `account` parameter when using this method. You can use either `address` or `daccPublickey` - both require the same password.
+:::
+
+```ts
+const result = await daccSignAuthorizeEIP7702({
+//   account: "0xPrivatekey...", // [!code --]
+//   daccPublickey: 'daccPublickey_0x123_XxX..', // Match with address
+  address: '0x123address...', // [!code focus] Only the address created is set to `publicEncryption: true`
+  passwordSecretkey: 'my+Password#123..', // [!code ++]
+  network: optimismSepolia,
+  contractAddress: '0xcontract...'
+});
+```
+
+### passwordSecretkey (conditional)
+
+- **Type:** `string`
+
+The same password used when creating the wallet.
+
+:::info
+Make sure to use the exact same password that was used with `createDaccWallet`.
+:::
+
+```ts
+const result = await daccSignAuthorizeEIP7702({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..', // [!code focus]
+  network: optimismSepolia,
+  contractAddress: '0xcontract...'
+});
+```
+
+### network
+
+- **Type:** `Chain`
+
+The blockchain network to use for signing.
+
+:::note
+Use Chain objects from `viem/chains` (e.g., `mainnet`, `sepolia`, `optimismSepolia`) or define your own custom chain configuration.
+:::
+
+::::note[Custom Chain Network]
+When using [customChain](/concept/mechanical#custom-networks) click to details.
+:::details
+```ts
+import { defineChain } from "viem";
+
+const myCustomChain = defineChain({
+  id: 123456,
+  name: "My Custom Chain",
+  network: "myCustomChain",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc-example.com"] }
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer-example.com' },
+  },
+});
+```
+:::
+::::
+
+```ts
+const result = await daccSignAuthorizeEIP7702({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password#123..',
+  network: optimismSepolia, // [!code focus]
+  // network: myCustomChain, // [!code hl] For Custom Chain Network
+  contractAddress: '0xcontract...'
+});
+```
+
+### contractAddress
+
+- **Type:** `0x${string}`
+
+The smart contract address to authorize for delegation.
+
+:::note
+This is the contract that will be authorized to control your wallet account using EIP-7702 delegation. This enables account abstraction features on your externally owned account (EOA).
+:::
+
+```ts
+const result = await daccSignAuthorizeEIP7702({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password#123..',
+  network: optimismSepolia,
+  contractAddress: '0xcontract...' // [!code focus]
+});
+```
+
+## Examples
+
+### Basic EIP-7702 Authorization
+
+```ts
+const result = await daccSignAuthorizeEIP7702({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password#123..',
+  network: optimismSepolia,
+  contractAddress: '0xSmartWalletDelegate...'
+});
+
+console.log(`Authorization created for: ${result.contractAddress}`);
+console.log(`From address: ${result.from}`);
+console.log(`Chain ID: ${result.chainId}`);
+console.log(`Authorization signature:`, result.authorization);
+```
+
+### Using Account Parameter
+
+```ts
+const result = await daccSignAuthorizeEIP7702({
+  account: "0xYourPrivateKey...",
+  network: optimismSepolia,
+  contractAddress: '0xAccountAbstractionContract...'
+});
+
+console.log(`EIP-7702 authorization signed successfully`);
+console.log(`Authorization details:`, result.authorization);
+```
+
+### Smart Wallet Delegation
+
+```ts
+import { optimismSepolia } from "viem/chains";
+
+const smartWalletAuth = await daccSignAuthorizeEIP7702({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password#123..',
+  network: optimismSepolia,
+  contractAddress: '0xSmartWalletImplementation...'
+});
+
+// This authorization allows the smart contract to act on behalf of your EOA
+console.log(`Smart wallet authorization:`, smartWalletAuth);
+console.log(`Contract can now control address: ${smartWalletAuth.from}`);
+```
+
+### Account Abstraction Setup
+
+```ts
+const aaAuth = await daccSignAuthorizeEIP7702({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password#123..',
+  network: optimismSepolia,
+  contractAddress: '0xAccountAbstractionWallet...'
+});
+
+// Now your EOA can use account abstraction features like:
+// - Batched transactions
+// - Gas sponsorship 
+// - Custom validation logic
+
+console.log(`Account abstraction enabled for: ${aaAuth.from}`);
+console.log(`AA Contract: ${aaAuth.contractAddress}`);
+```

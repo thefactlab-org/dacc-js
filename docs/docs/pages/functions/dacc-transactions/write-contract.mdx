@@ -1,0 +1,432 @@
+# Write Contract (daccWriteContract) [A function to execute smart contract write operations]
+
+The `daccWriteContract` function allows you to **execute write transactions on smart contracts** from a Dacc Wallet. It handles the transaction signing and broadcasting using the encrypted wallet.
+
+## Import
+
+```ts 
+import { daccWriteContract } from "dacc-js";
+```
+
+## Usage
+
+```ts 
+import { daccWriteContract } from "dacc-js";
+// [!code word:sepolia]
+import { sepolia } from "viem/chains"; // used `viem` - npm i viem
+
+const tx = await daccWriteContract({
+  // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  // address: '0x123...', // Only the address created is set to `publicEncryption: true`
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n]
+  // value: 0.1 // Optional: ETH Native value to send
+});
+
+console.log(tx); // {txHash, chainId, from, contractAddress, functionName, args}
+console.log(tx?.txHash); // 0xtransactionhash...
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`account`** | `Account` or `0x${string}` | Conditional: The account to use for signing (Account object is private key). |
+| **`daccPublickey`** | `string` | Conditional: The encrypted wallet data from `createDaccWallet`. |
+| **`address`** | `0x${string}` | Conditional: wallet address from a created with `createDaccWallet` in `publicEncryption: true` mode (can use instead of daccPublickey). |
+| **`passwordSecretkey`** | `string` | Conditional: The user's password used to decrypt the wallet. |
+| **`network`** | `Chain` | The blockchain network object to execute the transaction on. |
+| **`contractAddress`** | `0x${string}` | The smart contract address to interact with. |
+| **`abi`** | `Abi` | The contract ABI for function calls. |
+| **`functionName`** | `string` | The contract function to execute. |
+| **`args`** | `any[]` | Optional: Array of function arguments. |
+| **`value`** | `number` | Optional: ETH Native value to send with the transaction (in ETH units). |
+
+## Return Value
+The response result is an object containing `{txHash, chainId, from, contractAddress, functionName, args}`
+
+## Parameters
+
+### account (conditional)
+
+- **Type:** `Account` | `0x${string}`
+
+The user's account to use for signing the transaction.
+
+:::note
+When using the `account` parameter, you **don't need** to provide `address`, `daccPublickey`, or `passwordSecretkey`. The account contains the private key needed for signing directly.
+:::
+
+```ts
+const tx = await daccWriteContract({
+  account: "0xPrivatekey...", // [!code focus] Can call with `allowDaccWallet` function
+//   address: '0x123...', // [!code --]
+//   daccPublickey: 'daccPublickey_0x123_XxX..', // [!code --]
+//   passwordSecretkey: 'my+Password#123..', // [!code --]
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n]
+});
+```
+
+### daccPublickey (conditional)
+
+- **Type:** `string`
+
+The user's encrypted public key to address.
+
+> *daccPublickey is the most reliable addressing solution and supports all types of data storage using `daccPublickey`.*
+
+:::note
+When using `daccPublickey`, you **must also provide** `passwordSecretkey` to decrypt the wallet., Remove the `account` parameter when using this method.
+:::
+
+```ts
+const tx = await daccWriteContract({
+//   account: "0xPrivatekey...", // [!code --]
+  daccPublickey: 'daccPublickey_0x123_XxX..', // [!code focus]
+  passwordSecretkey: 'my+Password#123..', // [!code ++]
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n]
+});
+```
+
+### address (optional)
+
+- **Type:** `0x${string}`
+
+The encrypted wallet data returned from `createDaccWallet`.
+
+:::note
+When using `address`, you **must also provide** `passwordSecretkey` to decrypt the wallet. Remove the `account` parameter when using this method. You can use either `address` or `daccPublickey` - both require the same password.
+:::
+
+```ts
+const tx = await daccWriteContract({
+//   account: "0xPrivatekey...", // [!code --]
+//   daccPublickey: 'daccPublickey_0x123_XxX..', // Match with address
+  address: '0x123address...', // [!code focus] Only the address created is set to `publicEncryption: true`
+  passwordSecretkey: 'my+Password#123..', // [!code ++]
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n]
+});
+```
+
+### passwordSecretkey (conditional)
+
+- **Type:** `string`
+
+The same password used when creating the wallet.
+
+:::info
+Make sure to use the exact same password that was used with `createDaccWallet`.
+:::
+
+```ts
+const tx = await daccWriteContract({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..', // [!code focus]
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n]
+});
+```
+
+### network
+
+- **Type:** `Chain`
+
+The blockchain network object to execute the transaction on.
+
+:::note
+Use Chain objects from `viem/chains` (e.g., `mainnet`, `sepolia`, `optimismSepolia`) or define your own custom chain configuration.
+:::
+
+::::note[Custom Chain Network]
+When using [customChain](/concept/mechanical#custom-networks) click to details.
+:::details
+```ts
+import { defineChain } from "viem";
+
+const myCustomChain = defineChain({
+  id: 123456,
+  name: "My Custom Chain",
+  network: "myCustomChain",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc-example.com"] }
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer-example.com' },
+  },
+});
+```
+:::
+::::
+
+```ts
+const tx = await daccWriteContract({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia, // [!code focus]
+//   network: myCustomChain, // [!code hl] For - Custom Chain Network
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n]
+});
+```
+
+### contractAddress
+
+- **Type:** `0x${string}`
+
+The smart contract address to interact with.
+
+```ts
+const tx = await daccWriteContract({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xcontract...', // [!code focus]
+  abi: contractAbi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n]
+});
+```
+
+### abi
+
+- **Type:** `Abi`
+
+The contract ABI (Application Binary Interface) for function calls.
+
+:::note
+The ABI defines the contract's functions and their parameters. You can get the ABI from your contract compilation artifacts or block explorers.
+:::
+
+```ts
+const contractAbi = [
+  {
+    "inputs": [
+      {"name": "to", "type": "address"},
+      {"name": "amount", "type": "uint256"}
+    ],
+    "name": "transfer",
+    "outputs": [{"name": "", "type": "bool"}],
+    "type": "function"
+  }
+] as const;
+
+const tx = await daccWriteContract({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi, // [!code focus]
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n]
+});
+```
+
+### functionName
+
+- **Type:** `string`
+
+The contract function to execute.
+
+:::note
+The function name must match exactly with the function defined in the contract ABI.
+:::
+
+```ts
+const tx = await daccWriteContract({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'transfer', // [!code focus]
+  args: ['0xrecipient...', 1000000000000000000n]
+});
+```
+
+### args (optional)
+
+- **Type:** `any[]`
+- **Default:** `[]`
+
+Array of function arguments.
+
+:::note
+The arguments must match the function parameters defined in the ABI. Use `BigInt` for large numbers and uint256 values.
+:::
+
+```ts
+const tx = await daccWriteContract({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', 1000000000000000000n] // [!code focus]
+});
+```
+
+### value (optional)
+
+- **Type:** `number`
+- **Default:** `undefined`
+
+ETH value to send with the transaction (in ETH units).
+
+:::note
+This is useful for payable functions that require ETH to be sent along with the function call.
+:::
+
+```ts
+const tx = await daccWriteContract({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'deposit',
+  args: [],
+  value: 0.1 // [!code focus] Send 0.1 ETH Native with the transaction
+});
+```
+
+## Examples
+
+### Transfer ERC20 tokens
+
+```ts
+const erc20Abi = [
+  {
+    "inputs": [
+      {"name": "to", "type": "address"},
+      {"name": "amount", "type": "uint256"}
+    ],
+    "name": "transfer",
+    "outputs": [{"name": "", "type": "bool"}],
+    "type": "function"
+  }
+] as const;
+
+const tx = await daccWriteContract({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xTokenContract...',
+  abi: erc20Abi,
+  functionName: 'transfer',
+  args: ['0xrecipient...', BigInt('1000000000000000000')] // 1 token with 18 decimals
+});
+
+console.log(`Transaction hash: ${tx.txHash}`);
+console.log(`Called function: ${tx.functionName}`);
+```
+
+### Mint NFT with ETH payment
+
+```ts
+const nftAbi = [
+  {
+    "inputs": [{"name": "to", "type": "address"}],
+    "name": "mint",
+    "outputs": [],
+    "payable": true,
+    "type": "function"
+  }
+] as const;
+
+const tx = await daccWriteContract({
+  account: "0xYourPrivateKey...",
+  network: sepolia,
+  contractAddress: '0xNFTContract...',
+  abi: nftAbi,
+  functionName: 'mint',
+  args: ['0xminterAddress...'],
+  value: 0.05 // Pay 0.05 ETH to mint
+});
+
+console.log(`NFT minted! Transaction: ${tx.txHash}`);
+```
+
+### Approve token spending
+
+```ts
+const erc20Abi = [
+  {
+    "inputs": [
+      {"name": "spender", "type": "address"},
+      {"name": "amount", "type": "uint256"}
+    ],
+    "name": "approve",
+    "outputs": [{"name": "", "type": "bool"}],
+    "type": "function"
+  }
+] as const;
+
+const tx = await daccWriteContract({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xUSDCContract...',
+  abi: erc20Abi,
+  functionName: 'approve',
+  args: ['0xSpenderContract...', BigInt('1000000000')] // Approve 1000 USDC (6 decimals)
+});
+
+console.log(`Approval successful: ${tx.txHash}`);
+```
+
+### Call function with no arguments
+
+```ts
+const contractAbi = [
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "type": "function"
+  }
+] as const;
+
+const tx = await daccWriteContract({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password#123..',
+  network: sepolia,
+  contractAddress: '0xContract...',
+  abi: contractAbi,
+  functionName: 'pause'
+  // args: [] is optional when no arguments needed
+});
+
+console.log(`Contract paused: ${tx.txHash}`);
+```

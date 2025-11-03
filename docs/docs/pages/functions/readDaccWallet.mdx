@@ -1,0 +1,191 @@
+# readDaccWallet [A function Search a Wallet information.]
+
+The `readDaccWallet` function is designed to retrieve information about a specific wallet within the `dacc-js` library.
+
+:::success
+The Dacc wallet must be created with [publicEncryption: **true**](/functions/createDaccWallet/#publicencryption-optional) to store data on the blockchain.
+:::
+
+:::warning
+Enabling this mode carries inherent risks that you accept. **Please set the strongest possible password for your wallet**.
+:::
+
+## Import
+
+```ts
+import { readDaccWallet } from "dacc-js";
+```
+
+## Usage
+
+```ts
+import { readDaccWallet } from "dacc-js";
+
+const info = await readDaccWallet({
+  address: "0x1234abcd...",
+//   dataStorageNetwork: "opSepolia",
+//   result: "daccPublickey"
+});
+
+console.log("info:", info); 
+// { dataStorageNetwork: "opSepolia", daccPublickey: "daccPublickey_0x123_XxX..." }
+```
+```ts
+const info = await readDaccWallet({
+  address: "0x1234abcd...",
+  dataStorageNetwork: "opSepolia",
+  result: "daccPublickey"
+});
+
+console.log("info:", info); 
+// { daccPublickey: "daccPublickey_0x123_XxX..." }
+```
+
+Find `daccPublickey` by **address**
+
+```ts
+const info = await readDaccWallet({
+  address: "0x1234abcd..."
+});
+
+console.log("info:", info); 
+// { dataStorageNetwork: "opSepolia", daccPublickey: "daccPublickey_0x123_XxX..." }
+```
+
+Find `address` by **daccPublickey**
+```ts
+const info = await readDaccWallet({
+  daccPublickey: "daccPublickey_0x123_XxX..."
+});
+
+console.log("info:", info); 
+// { dataStorageNetwork: "opSepolia", address: "0x1234abcd..." }
+```
+
+*Explicitly specifying options will speed up searches.*
+
+### Arguments
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`daccPublickey`** | `string` | Encrypted public key to find associated address |
+| **`address`** | `0x${string}` | Wallet address to find associated encrypted public key |
+| **`dataStorageNetwork`** | `string \| "all"` | Network to query. Defaults to `"all"` |
+| **`result`** | `"address" \| "daccPublickey" \| "all"` | Specify return data type |
+
+*Either `address` or `daccPublickey` must be provided.*
+
+## Return Values
+
+The return value depends on the `result` parameter and `dataStorageNetwork` setting:
+
+### When querying all networks (`dataStorageNetwork: "all"`)
+
+```ts
+// Returns with network information
+{
+  dataStorageNetwork: string;
+  address?: `0x${string}`;
+  daccPublickey?: string;
+}
+```
+
+### When querying specific network
+
+```ts
+// Returns without network information
+{
+  address?: `0x${string}`;
+  daccPublickey?: string;
+}
+```
+
+## Parameters
+
+### daccPublickey (conditional)
+
+- **Type:** `string`
+
+Encrypted public key of the wallet to look up.
+
+```ts
+const info = await readDaccWallet({
+  daccPublickey: "daccPublickey_0x123_XxX..." // [!code focus]
+});
+```
+
+### address (conditional)
+
+- **Type:** `0x${string}`
+
+address of the wallet to look up.
+
+```ts
+const info = await readDaccWallet({
+  address: "0x1234abcd...", // [!code focus]
+});
+```
+
+### dataStorageNetwork (optional)
+
+- **Type:** `string` (keyof)
+- **Default:** `"all"`
+
+Specify which blockchain network to query.
+
+::::note
+When using [customChain](/concept/mechanical#custom-networks), it must be specified **dataStorageNetwork** and match the configuration used during [createDaccWallet](/functions/createDaccWallet#datastoragenetwork):
+- Ensure the defined `chain` has correct configuration (RPC URL, Chain ID etc..)
+- The `contract` address must be a Smart Contract already deployed on that chain
+ 
+:::details[Custom Chain Network]
+```ts
+import { defineChain } from "viem";
+
+const myCustomChain = defineChain({
+  id: 123456,
+  name: "My Custom Chain",
+  network: "myCustomChain",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc-example.com"] }
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer-example.com' },
+  },
+});
+```
+:::
+::::
+
+```ts
+const info = await readDaccWallet({
+  daccPublickey: "daccPublickey_0x123_XxX...",
+  // address: "0x1234abcd...",
+  dataStorageNetwork: "opSepolia" // [!code focus]
+//   dataStorageNetwork: { 
+//     customChain: { // [!code hl] For Custom Chain Network
+//       chain: myCustomChain, // [!code hl]
+//       contract: "0xYourDeployDaccWalletStorageOnChainAddress..", [!code hl]
+//     }, // [!code hl]
+//   },
+});
+```
+
+*Specifying a network will make searches more precise and faster.*
+
+### result (optional)
+
+- **Type:** `string` (keyof)
+- **Default:** `"all"`
+
+result type to return.
+
+```ts
+const info = await readDaccWallet({
+  daccPublickey: "daccPublickey_0x123_XxX...",
+  // address: "0x1234abcd...",
+  dataStorageNetwork: "all",
+  result: "daccPublickey" // [!code focus]
+});
+```

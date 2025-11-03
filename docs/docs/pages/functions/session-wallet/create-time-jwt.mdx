@@ -1,0 +1,161 @@
+# Create session Time (allowSessionTimeWalletWithJWT) [A function Create JWT Session Token]
+
+The `allowSessionTimeWalletWithJWT` function creates a **JWT session token from encrypted wallet data**. It creates a time-limited JWT token with encrypted credentials for secure session management, allowing users to perform transactions without entering their password every time for convenience.
+
+:::success
+This function is designed to enhance user experience by eliminating the need for password entry on every transaction within the session time. **It's recommended to store JWT tokens privately using HTTP-only/In-memory cookies in web browsers for optimal security**.
+:::
+:::warning
+Session authorization provides long-term access to your wallet. Please ensure you understand and accept the risks before using this function.
+:::
+:::danger
+Ensure the application is trustworthy and doesn't store JWT tokens. The token contains sensitive wallet access credentials.
+:::
+
+## Import
+
+```ts 
+import { allowSessionTimeWalletWithJWT } from "dacc-js";
+```
+
+## Usage
+
+```ts 
+import { allowSessionTimeWalletWithJWT } from "dacc-js";
+
+const jwt = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'myPassword#123..',
+  jwtSecret: 'jwt-secret-to-app',
+  maxAgeSeconds: 3600 // 1 hour
+});
+
+console.log(jwt); // eyJhZGRyZXNz...
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`daccPublickey`** | `string` | The encrypted wallet data. |
+| **`passwordSecretkey`** | `string` | User password for decrypting the wallet. |
+| **`jwtSecret`** | `string` | Secret key for JWT signing and encryption. |
+| **`maxAgeSeconds`** | `number` | Optional: Token expiration time in seconds (default: 3600). |
+
+## Return Value
+Returns a JWT token string for session authentication.
+
+## Parameters
+
+### daccPublickey
+
+- **Type:** `string`
+
+The encrypted wallet data returned from `createDaccWallet`.
+
+:::note
+This function only supports Dacc wallet encrypted data with `daccPublickey` format.
+:::
+
+```ts
+const jwt = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..', // [!code focus]
+  passwordSecretkey: 'my+Password#123..',
+  jwtSecret: 'jwt-secret-to-app',
+  maxAgeSeconds: 3600
+});
+```
+
+### passwordSecretkey
+
+- **Type:** `string`
+
+User password for decrypting the wallet.
+
+:::info
+Make sure to use the exact same password that was used with `createDaccWallet`.
+:::
+
+```ts
+const jwt = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..', // [!code focus]
+  jwtSecret: 'jwt-secret-to-app',
+  maxAgeSeconds: 3600
+});
+```
+
+### jwtSecret
+
+- **Type:** `string`
+
+Secret key for JWT signing and encryption.
+
+:::note
+Keep this secret secure and consistent across your application for proper [JWT verification](/functions/session-wallet/verify-time-jwt#jwtsecret).
+:::
+
+```ts
+const jwt = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  jwtSecret: 'jwt-secret-to-app', // [!code focus]
+  maxAgeSeconds: 3600
+});
+```
+
+### maxAgeSeconds (optional)
+
+- **Type:** `number`
+- **Default:** `3600` (1 hour)
+
+Token expiration time in seconds.
+
+```ts
+const jwt = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  jwtSecret: 'jwt-secret-to-app',
+  maxAgeSeconds: 7200 // [!code focus] 2 hours
+});
+```
+
+## Examples
+
+### Create short-term session (15 minutes)
+
+```ts
+const jwt = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  jwtSecret: 'your-jwt-secret-key',
+  maxAgeSeconds: 900 // 15 minutes
+});
+
+console.log(`Short session JWT: ${jwt}`);
+```
+
+### Create long-term session (24 hours)
+
+```ts
+const jwt = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  jwtSecret: 'your-jwt-secret-key',
+  maxAgeSeconds: 86400 // 24 hours
+});
+
+console.log(`Long session JWT: ${jwt}`);
+```
+
+### Default session (1 hour)
+
+```ts
+const jwt = await allowSessionTimeWalletWithJWT({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  jwtSecret: 'your-jwt-secret-key'
+  // maxAgeSeconds will default to 3600 (1 hour)
+});
+
+console.log(`Default session JWT: ${jwt}`);
+```

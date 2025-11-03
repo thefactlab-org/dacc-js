@@ -1,0 +1,302 @@
+# Sign Message (daccSignMessage)
+
+The `daccSignMessage` function allows you to **sign messages** using a Dacc wallet. It creates a wallet client and signs the specified message, returning the signature with metadata.
+
+## Import
+
+```ts 
+import { daccSignMessage } from "dacc-js";
+```
+
+## Usage
+
+```ts 
+import { daccSignMessage } from "dacc-js";
+// [!code word:optimismSepolia]
+import { optimismSepolia } from "viem/chains"; // used `viem` - npm i viem
+
+const result = await daccSignMessage({
+  // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  // address: "0xYourAccountAddress..", // Only the address created is set to `publicEncryption: true`
+  passwordSecretkey: 'my+Password123..',
+  network: optimismSepolia,
+  message: 'Hello World'
+});
+
+console.log(result); // {signature, chainId, from, message}
+console.log(result?.signature); // 0xsignature...
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`account`** | `Account` or `0x${string}` | Conditional: The account to use for signing (Account object is private key). |
+| **`daccPublickey`** | `string` | Conditional: The encrypted wallet data from `createDaccWallet`. |
+| **`address`** | `0x${string}` | Conditional: wallet address from a created with `createDaccWallet` in `publicEncryption: true` mode (can use instead of daccPublickey). |
+| **`passwordSecretkey`** | `string` | Conditional: The user's password used to decrypt the wallet. |
+| **`network`** | `Chain` | The blockchain network configuration. |
+| **`message`** | `string` or `{ raw: 0x${string} }` | The message to sign (string or hex format). |
+
+## Return Value
+The response result is an object containing `{signature, chainId, from, message}`
+
+## Parameters
+
+### account (conditional)
+
+- **Type:** `Account` | `0x${string}`
+
+The user's account to use for signing the message.
+
+:::note
+When using the `account` parameter, you **don't need** to provide `address`, `daccPublickey`, or `passwordSecretkey`. The account contains the private key needed for signing directly.
+:::
+
+```ts
+const result = await daccSignMessage({
+  account: "0xPrivatekey...", // [!code focus]
+//   address: '0x123...', // [!code --]
+//   daccPublickey: 'daccPublickey_0x123_XxX..', // [!code --]
+//   passwordSecretkey: 'my+Password123..', // [!code --]
+  network: optimismSepolia,
+  message: 'Hello World'
+});
+```
+
+### daccPublickey (conditional)
+
+- **Type:** `string`
+
+The user's encrypted public key to address.
+
+> *daccPublickey is the most reliable addressing solution and supports all types of data storage using `daccPublickey`.*
+
+:::note
+When using `daccPublickey`, you **must also provide** `passwordSecretkey` to decrypt the wallet., Remove the `account` parameter when using this method.
+:::
+
+```ts
+const result = await daccSignMessage({
+//   account: "0xPrivatekey...", // [!code --]
+  daccPublickey: 'daccPublickey_0x123_XxX..', // [!code focus]
+  passwordSecretkey: 'my+Password123..', // [!code ++]
+  network: optimismSepolia,
+  message: 'Hello World'
+});
+```
+
+*daccPublickey is the most reliable addressing solution and supports all types of data storage using `daccPublickey`.*
+
+### address (optional)
+
+- **Type:** `0x${string}`
+
+The encrypted wallet data returned from `createDaccWallet`.
+
+:::note
+When using `address`, you **must also provide** `passwordSecretkey` to decrypt the wallet. Remove the `account` parameter when using this method. You can use either `address` or `daccPublickey` - both require the same password.
+:::
+
+```ts
+const result = await daccSignMessage({
+//   account: "0xPrivatekey...", // [!code --]
+//   daccPublickey: 'daccPublickey_0x123_XxX..', // Match with address
+  address: '0x123address...', // [!code focus] Only the address created is set to `publicEncryption: true`
+  passwordSecretkey: 'my+Password123..', // [!code ++]
+  network: optimismSepolia,
+  message: 'Hello World'
+});
+```
+
+### passwordSecretkey (conditional)
+
+- **Type:** `string`
+
+The same password used when creating the wallet.
+
+:::info
+Make sure to use the exact same password that was used with `createDaccWallet`.
+:::
+
+```ts
+const result = await daccSignMessage({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password123..', // [!code focus]
+  network: optimismSepolia,
+  message: 'Hello World'
+});
+```
+
+### network
+
+- **Type:** `Chain`
+
+The blockchain network configuration for the signing operation.
+
+:::note
+Use Chain objects from `viem/chains` (e.g., `mainnet`, `sepolia`, `optimismSepolia`) or define your own custom chain configuration.
+:::
+
+::::note[Custom Chain Network]
+When using [customChain](/concept/mechanical#custom-networks) click to details.
+:::details
+```ts
+import { defineChain } from "viem";
+
+const myCustomChain = defineChain({
+  id: 123456,
+  name: "My Custom Chain",
+  network: "myCustomChain",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc-example.com"] }
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer-example.com' },
+  },
+});
+```
+:::
+::::
+
+```ts
+const result = await daccSignMessage({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password123..',
+  network: optimismSepolia, // [!code focus]
+  // network: myCustomChain, // [!code hl] For Custom Chain Network
+  message: 'Hello World'
+});
+```
+
+### message
+
+- **Type:** `string` | `{ raw: 0x${string} }`
+
+The message to sign. Can be a plain text string or a hex-encoded message object.
+
+```ts
+// Plain text message
+const result = await daccSignMessage({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password123..',
+  network: optimismSepolia,
+  message: 'Hello World' // [!code focus]
+});
+
+// Hex-encoded message
+const result2 = await daccSignMessage({
+  address: '0x123...',
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password123..',
+  network: optimismSepolia,
+  message: { raw: '0x48656c6c6f20576f726c64' }, // [!code focus] "Hello World" in hex
+});
+```
+
+## Examples
+
+### Sign a simple message
+
+```ts
+const result = await daccSignMessage({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password123..',
+  network: optimismSepolia,
+  message: 'Welcome to Dacc Wallet!'
+});
+
+console.log(`Signature: ${result.signature}`);
+console.log(`Signer: ${result.from}`);
+console.log(`Chain ID: ${result.chainId}`);
+console.log(`Original message: ${result.message}`);
+```
+
+### Sign with private key account
+
+```ts
+const result = await daccSignMessage({
+  account: "0xYourPrivateKey...",
+  message: 'Authentication request',
+  network: sepolia
+});
+
+console.log(`Message signed successfully: ${result.signature}`);
+```
+
+### Sign hex-encoded message
+
+```ts
+const hexMessage = '0x48656c6c6f20446563656e7472616c697a6564205761626333'; // "Hello Decentralized Web3"
+
+const result = await daccSignMessage({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password123..',
+  message: { raw: hexMessage },
+  network: mainnet
+});
+
+console.log(`Hex message signed: ${result.signature}`);
+```
+
+### Sign message for authentication
+
+```ts
+const authMessage = `Sign this message to authenticate with our dApp.
+Nonce: ${Date.now()}
+Timestamp: ${new Date().toISOString()}`;
+
+const result = await daccSignMessage({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  address: '0x123...',
+  passwordSecretkey: 'my+Password123..',
+  message: authMessage,
+  network: polygon
+});
+
+// Use the signature for authentication
+console.log(`Authentication signature: ${result.signature}`);
+console.log(`Authenticated user: ${result.from}`);
+```
+
+### Sign JSON message
+
+```ts
+const jsonMessage = JSON.stringify({
+  action: 'login',
+  timestamp: Date.now(),
+  domain: 'example.com'
+});
+
+const result = await daccSignMessage({
+  account: "0xPrivateKey...",
+  message: jsonMessage,
+  network: arbitrum
+});
+
+console.log(`JSON message signed: ${result.signature}`);
+```
+
+### Verify message with different networks
+
+```ts
+// Sign on different networks
+const networks = [mainnet, sepolia, optimism, polygon];
+
+for (const network of networks) {
+  const result = await daccSignMessage({
+    daccPublickey: 'daccPublickey_0x123_XxX..',
+    address: '0x123...',
+    passwordSecretkey: 'my+Password123..',
+    message: `Multi-chain signature on ${network.name}`,
+    network
+  });
+  
+  console.log(`${network.name} signature: ${result.signature}`);
+}
+```

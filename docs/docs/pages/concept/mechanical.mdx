@@ -1,0 +1,205 @@
+# Mechanical system [Mechanical system and lifecycle of a wallet]
+
+## Overview
+![img](/mechanical.png)
+
+
+The **Mechanical System** in `dacc-js` defines the complete lifecycle of a wallet from creation, encryption, and storage, to recovery, keeping your private data safe and under your control. (referring to the user's device or trusted execution environment).
+
+## Wallet Creation Process
+
+### Wallet Creation Flow
+
+```typescript
+Password → Generate Wallet → Encrypt Private Key → Store (Optional: Private/Public)
+```
+
+1. **Password Validation**: Validates password length (12-120 characters by default)
+2. **Generate Wallet**: Creates new private key using `generatePrivateKey()`
+3. **Encrypt Private Key**: Uses Argon2ID + AES-GCM encryption
+4. **Storage Mode**: Choose between private (local) or public (blockchain) storage
+
+### Wallet Recovery Flow
+
+```typescript
+Encrypted Data + Password → Decrypt → Private Key → Wallet Access
+```
+
+1. **Retrieve encrypted data**: From your storage or blockchain
+2. **User provides password**: Same password used for encryption
+3. **Decrypt private key**: Reverses the encryption process
+4. **Restore wallet**: Full access to your wallet and funds
+
+## Security Architecture
+
+### Encryption Process
+
+```typescript
+// Generate random number
+const salt = crypto.getRandomValues(new Uint8Array(16));
+const iv = crypto.getRandomValues(new Uint8Array(12));
+
+// Argon2ID key derivation
+const key = sodium.crypto_pwhash(
+  32,
+  passwordSecretkey,
+  salt,
+  sodium.crypto_pwhash_OPSLIMIT_MODERATE,
+  sodium.crypto_pwhash_MEMLIMIT_MODERATE,
+  sodium.crypto_pwhash_ALG_ARGON2ID13
+);
+
+// AES-GCM encryption
+const encrypted = await crypto.subtle.encrypt(
+  { name: "AES-GCM", iv },
+  key,
+  hexToBytes(privateKey)
+);
+```
+
+### Security Features
+
+- **Argon2ID**: Memory-hard password hashing, resistant to GPU/ASIC attacks
+- **AES-GCM**: Authenticated encryption with built-in integrity protection
+- **Random Salt & IV**: Each encryption is cryptographically unique
+- **Base58 Encoding**: Human-readable format with address prefix
+
+**Pros:**
+- Automatic public encryption on blockchain (optional)
+- Accessible from anywhere
+- Permanent storage
+
+**Cons:**
+- Requires transaction fees
+- Need existing wallet for gas
+- Public (but encrypted) storage
+
+## Threat Model
+
+### What Dacc-js Protects Against
+
+- ✅ **Data breaches**: Encrypted data is useless without passwords
+- ✅ **Network interception**: Only encrypted data is transmitted
+- ✅ **Server compromises**: No servers store your secrets
+- ✅ **Malicious storage providers**: They only see encrypted data
+
+### What You Must Protect Against
+
+- ❌ **Password compromise**: Use strong, unique passwords
+- ❌ **Device compromise**: Keep your device secure
+- ❌ **Social engineering**: Never share passwords or private keys
+- ❌ **Physical access**: Secure your storage locations
+- ❌ **App access**: Make sure any application you use cannot store or view your password.
+
+## Privacy Model
+
+### What Private
+
+- ✅ Your private key (never stored or transmitted)
+- ✅ Your decrypted private key (client-side only)
+- ✅ Your wallet contents and transactions
+- ✅ The connection between your identity and wallet
+
+### What Public (When Using Blockchain Storage)
+
+- ❌ The fact that an encrypted wallet exists
+- ❌ The wallet's public address
+- ❌ When the wallet was created
+- ❌ The encrypted data (but it's meaningless without your password)
+
+Even if someone gains access to, They still cannot access your wallet without your password.
+
+## Supported Networks
+
+Dacc-js supports multiple blockchain networks for storage:
+
+### Testnet
+| Network | ChainId | Smart Contract | Type |
+|---------|---------|------------------|------|
+| `sepolia` | 11155111 | [Proxy](https://eth-sepolia.blockscout.com/address/0x79f5E87D0bFd7610273899424749A0663462d9fd), [Storage](https://eth-sepolia.blockscout.com/address/0x8e984db8Fa914b8C4511CD1D6DfE987A3E6eD64e) | Testnet |
+| `hoodi` | 560048 | [Proxy](https://eth-hoodi.blockscout.com/address/0x75712faa1a0F38daC2CafdF8693364bEeB91ab27), [Storage](https://eth-hoodi.blockscout.com/address/0x289EB201A76010a7B00B820316a69612E71c76C7) | Testnet |
+| `opSepolia` | 11155420 | [Proxy](https://testnet-explorer.optimism.io/address/0x75712faa1a0F38daC2CafdF8693364bEeB91ab27), [Storage](https://testnet-explorer.optimism.io/address/0x289EB201A76010a7B00B820316a69612E71c76C7) | Testnet |
+| `baseSepolia` | 84532 | [Proxy](https://base-sepolia.blockscout.com/address/0x75712faa1a0F38daC2CafdF8693364bEeB91ab27), [Storage](https://base-sepolia.blockscout.com/address/0x289EB201A76010a7B00B820316a69612E71c76C7) | Testnet |
+| `bnbTestnet` | 97 | [Proxy](https://testnet.bscscan.com/address/0x75712faa1a0F38daC2CafdF8693364bEeB91ab27), [Storage](https://testnet.bscscan.com/address/0x289eb201a76010a7b00b820316a69612e71c76c7) | Testnet |
+
+### Mainnet
+| Network | ChainId | Smart Contract | Type |
+|---------|---------|------------------|------|
+| `ethereum` | 1 | [Proxy](https://etherscan.io/address/0x75712faa1a0f38dac2cafdf8693364beeb91ab27), [Storage](https://etherscan.io/address/0x289eb201a76010a7b00b820316a69612e71c76c7) | Mainnet |
+| `optimism` | 10 | [Proxy](https://explorer.optimism.io/address/0x75712faa1a0f38dac2cafdf8693364beeb91ab27), [Storage](https://explorer.optimism.io/address/0x289eb201a76010a7b00b820316a69612e71c76c7) | Mainnet |
+| `base` | 8453 | [Proxy](https://basescan.org/address/0x75712faa1a0f38dac2cafdf8693364beeb91ab27), [Storage](https://basescan.org/address/0x289eb201a76010a7b00b820316a69612e71c76c7) | Mainnet |
+| `bnb` | 56 | [Proxy](https://bscscan.com/address/0x75712faa1a0f38dac2cafdf8693364beeb91ab27), [Storage](https://bscscan.com/address/0x289eb201a76010a7b00b820316a69612e71c76c7) | Mainnet |
+
+*These networks are actively maintained and updated.*
+
+### Custom Networks
+You can define custom blockchain networks by providing the necessary chain configuration when using Dacc-js functions. This allows you to use Dacc-js with any EVM-compatible blockchain that suits your requirements.
+
+*[network](/functions/createDaccWallet#datastoragenetwork), [contract]()*
+:::code-group
+```ts [Network.ts]
+import { defineChain } from "viem";
+
+const myCustomChain = defineChain({
+  id: 123456,
+  name: "My Custom Chain",
+  network: "myCustomChain",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc-example.com"] }
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer-example.com' },
+  },
+});
+```
+
+```solidity [Contract.sol]
+// SPDX-License-Identifier: MIT
+// Non-Proxy - Simple Smart Contract for Dacc Wallet Storage
+pragma solidity ^0.8.30;
+
+contract DaccWalletStorage {
+    mapping(address => string) private daccPublickeyOf;
+    mapping(string => address) private addressOf;
+    mapping(address => bool) private isCreated;
+
+    event CreatedDaccWallet(address walletAddress, string daccPublickey);
+
+    function createDaccWallet(address walletAddress, string memory daccPublickey) external {
+        require(!isCreated[walletAddress], "Already create");
+        require(addressOf[daccPublickey] == address(0), "daccPublickey already used");
+
+        daccPublickeyOf[walletAddress] = daccPublickey;
+        addressOf[daccPublickey] = walletAddress;
+        isCreated[walletAddress] = true;
+        emit CreatedDaccWallet(walletAddress, daccPublickey);
+    }
+
+    function getPublickeyByAddress(address walletAddress) external view returns (string memory) {
+        return daccPublickeyOf[walletAddress];
+    }
+
+    function getAddressByPublickey(string memory daccPublickey) external view returns (address) {
+        return addressOf[daccPublickey];
+    }
+}
+```
+:::
+
+## Best Practices
+
+### Password Security
+- Use a unique password for each wallet
+- Minimum 12+ characters with mixed case, numbers, symbols
+- Use separate wallets for different use cases
+- Never store passwords with encrypted keys
+- Always test wallet recovery immediately after creation
+
+### Development
+- Always disclose your open-source to users
+- Implement proper error handling
+- Use secure random number generation
+- Never log sensitive information
+
+The design of Dacc-js ensures that you maintain complete control over your assets while benefiting from the convenience and backup capabilities of decentralized networks.

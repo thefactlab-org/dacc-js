@@ -1,0 +1,83 @@
+# allowDaccWallet [A function Allow a Wallet access and Private key]
+
+The `allowDaccWallet` function is designed to decrypt an encrypted wallet and retrieve its credentials (address and private key) for use within the `dacc-js` ecosystem. This function allows users to access their wallet by **daccPublickey** encrypted with their password.
+
+## Import
+
+```ts 
+import { allowDaccWallet } from "dacc-js";
+```
+## Usage
+
+```ts 
+import { allowDaccWallet } from "dacc-js";
+
+const allow = await allowDaccWallet({
+ daccPublickey: 'daccPublickey_0x123_XxX...',
+ passwordSecretkey: 'my+Password#123....',
+});
+
+console.log("allow:", allow); // {address, privateKey}
+console.log("allow address:", allow?.address); // 0x123address... (recall)
+console.log("allow privateKey:", allow?.privateKey); // 0xprivatekey... (secret)
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`daccPublickey`** | `string` | Conditional: The encrypted wallet data to lookup address from `createDaccWallet`. |
+| **`address`** | `0x${string}` | Conditional: Wallet address to lookup daccPublickey on-chain (`createDaccWallet` in `publicEncryption: true` Mode can use instead of daccPublickey). |
+| **`passwordSecretkey`** | `string` | The user's password used as the key for encryption. |
+
+## Return Value
+The response result is an object containing. `{address, privateKey}`.
+
+## Parameters
+
+### daccPublickey (conditional)
+
+- **Type:** `string`
+
+The user's encrypted public key to address.
+
+```ts
+const allow = await allowDaccWallet({
+ daccPublickey: 'daccPublickey_0x123_XxX...', // [!code focus]
+ passwordSecretkey: 'my+Password#123...'
+});
+```
+
+### address (conditional)
+
+- **Type:** `0x${string}`
+
+Wallet address to lookup daccPublickey **on-chain** [createDaccWallet](/functions/createDaccWallet#publicencryption-optional).
+
+:::note
+When using `address`, the function will call [readDaccWallet](/functions/readDaccWallet) to fetch the encrypted public key from on-chain storage. You don't need to provide `daccPublickey` when using this method.
+:::
+
+```ts
+const allow = await allowDaccWallet({
+ daccPublickey: 'daccPublickey_0x123_XxX...', // [!code --]
+ address: '0x123address...', // [!code focus]
+ passwordSecretkey: 'my+Password#123...'
+});
+```
+
+### passwordSecretkey
+
+- **Type:** `string`
+
+Your password secret is matched with the encryption.
+
+:::info
+Do not reveal your password to anyone.
+:::
+
+```ts
+const allow = await allowDaccWallet({
+ daccPublickey: 'daccPublickey_0x123_XxX...', 
+ passwordSecretkey: 'my+Password#123...' // [!code focus]
+});
+```

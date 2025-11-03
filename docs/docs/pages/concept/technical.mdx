@@ -1,0 +1,218 @@
+# Technical [Overview for specific techniques of Dacc-js]
+
+## Essential Technical Concepts
+
+### What is Address
+- **Definition**: Your wallet's public address (like a bank account number)
+- **Purpose**: Send/receive assets and tokens on blockchain
+- **Security**: Safe to share publicly - it's public information
+- **Example**: `0x1234abcd...`
+
+### What is Private Key
+- **Definition**: The actual secret key that controls your wallet and signs transactions
+- **Purpose**: Directly access and control blockchain assets and operations
+- **Security**: **Extremely sensitive** - never share or expose this key
+- **Format**: Usually starts with `0x` followed by 64 hexadecimal characters
+- **Relationship**: Encrypted by your password to create daccPublickey
+- **Usage**: Used internally by the system for signing transactions and proving ownership
+- **Example**: `0xabcd1234...` (64 characters)
+
+### Web2 vs Web3 Comparison
+
+| Web3 Concept | Web2 Equivalent | Description |
+|--------------|-----------------|-------------|
+| **Address** | Email Address / Username | Your public identifier that others can use to send you things |
+| **Private Key** | Master Password | The ultimate secret that gives you full control of your account |
+| **daccPublickey** | Encrypted Backup File | Your encrypted master password saved as a recovery file |
+| **Password** (Secretkey) | Decryption Key | The key needed to unlock your encrypted backup file |
+
+#### Real-world Analogy
+- **Address** = Your house address - safe to share for receiving mail
+- **Private Key** = Your house master key - opens everything, never share
+- **daccPublickey** = Encrypted spare key in a lockbox - secure backup
+- **Password** = Lockbox combination - needed to access your spare key
+
+### What is daccPublickey
+- **Definition**: Your private key encrypted with your password
+- **Purpose**: Restore your wallet when needed (acts like an ID and safely replaces the private key)
+- **Critical**: **Must keep it safe** - if lost, wallet cannot be recovered
+- **Security**: Already encrypted, but still keep it secret
+- **Recovery**: Forgot daccPublickey = Lost access to wallet (cannot be recovered)
+- **Example**: `daccPublickey_0x123_XxX...`
+
+### What is Password (Secretkey)
+- **Definition**: Your secret key that encrypts/decrypts your private key
+- **Purpose**: Password + daccPublickey = Access to your wallet
+- **Security**: Never share, store securely, use strong password
+- **Requirements**: Minimum 12 characters, maximum 120 characters
+- **Recovery**: Forgot password = Lost access to wallet (cannot be recovered)
+
+### Key Points
+- **Address** = Shareable (for receiving funds)
+- **Private Key** = Ultimate secret (never share, controls everything)
+- **daccPublickey** = Keep it (for wallet recovery)
+  - **Example**: `daccPublickey_0x123_XxX...` (Three parts `_` separated by underscores)
+   - `daccPublickey` = prefix
+   - `0x123...` = wallet address  
+   - `XxX...` = encryption
+     - Easy identification of which wallet's daccPublickey you're using
+- **Password** = Used with `daccPublickey` encrypted to access wallet
+- **Best Practice**: Always test wallet recovery after creation
+  - **Step 1**: Create wallet → Get `daccPublickey`
+  - **Step 2**: Test with `allowDaccWallet()` to verify password/key works
+  - **Step 3**: Confirm you can restore wallet before real usage
+    - Why Prevents loss of funds due to corrupted keys or wrong passwords
+- **Security Tip**: Use separate wallets for different purposes
+  - **Wallet 1** = Main vault (never use for apps, keep private)
+  - **Wallet 2** = Daily use (for apps and transactions)
+    - This protects your main funds from third-party risks
+
+
+## Storage Methods
+
+### 1. Local private creation (keep daccPublickey)
+- Overview: Create a wallet on the user device only.
+- Important: You must save the daccPublickey (the encrypted private key) alongside any local backup so the user can decrypt and restore the wallet later.
+- Flow: Password → generate private key → encrypt → store daccPublickey locally (file, keystore, secure storage).
+- When to use: Single-device use, private backups
+
+### 2. Off-chain creation (traditional Web2 login / DB)
+- Overview: Wallet is created client-side; encrypted payload is stored in your existing Web2 backend tied to the user's account.
+- Flow: Password → generate private key → encrypt → send daccPublickey to your backend → store in database (protected by auth).
+- Pros: Familiar login flows, centralized access control, easy account recovery via usual Web2 methods.
+- Cons: Backend must be trusted and secured; never store plain private keys or passwords.
+
+### 3. On-chain creation (public, encrypted storage)
+- Overview: Encrypted payload (daccPublickey) is published on a blockchain contract for decentralized, permanent storage.
+- Flow: Password → generate private key → encrypt → submit daccPublickey to smart contract → public but encrypted on-chain.
+- Pros: Decentralized backup, censorship-resistant, accessible from anywhere.
+- Cons: Transaction fees, public visibility of metadata (but not plaintext secrets), requires gas payer or existing wallet.
+
+
+## Integration Examples
+
+### Web2 Integration (User Account Binding)
+Link blockchain wallet with existing user accounts for seamless Web2/Web3 experience:
+
+```typescript
+import { createDaccWallet } from "dacc-js";
+import { allowDaccWallet } from "dacc-js";
+import { db } from "./your-database-setup"; // Your database module
+
+// Example: Bind wallet to user account in your database
+async function createUserWallet(userId: string, password: string) {
+  // Create dacc wallet
+  const wallet = await createDaccWallet({
+    passwordSecretkey: password
+  });
+  
+  // Save to your database
+  await db.users.update(userId, {
+    walletAddress: wallet.address,
+    encryptedWallet: wallet.daccPublickey,
+    createdAt: new Date()
+  });
+  
+  return wallet;
+}
+
+// Login and restore wallet
+async function loginAndRestoreWallet(userId: string, password: string) {
+  const userData = await db.users.findById(userId);
+  
+  // One time decryption to get private key
+  const wallet = await allowDaccWallet({
+    daccPublickey: userData.encryptedWallet,
+    passwordSecretkey: password
+  }); // {address, privateKey}
+
+  // --- //
+
+  // Or create a session JWT for continued access
+  const jwt = await allowSessionTimeWalletWithJWT({
+    daccPublickey: 'daccPublickey_XxX..',
+    passwordSecretkey: 'myPassword#123..',
+    jwtSecret: 'jwt-secret-to-app',
+    maxAgeSeconds: 3600 // 1 hour
+  });
+  console.log(`Session JWT: ${jwt}`); // eyJhZGRyZXNz...
+
+  // Later, verify the session JWT to get wallet info
+  const walletJWT = await verifySessionTimeWalletWithJWT({
+    jwt: jwt,
+    jwtSecret: 'jwt-secret-to-app'
+  });
+  console.log(`Wallet JWT: ${walletJWT}`); // {address: '0x123...', privateKey: '0xabc...'} or null
+  // Use walletJWT for Authentication - using HTTP-only/In-memory cookies in web browsers for verification and usage.
+  // Use walletJWT for Transactions
+  
+  return wallet; // Ready to use for transactions
+}
+```
+
+### Web3 Integration (Cross-Platform Compatibility)
+Use with popular Web3 libraries and frameworks:
+
+```typescript
+// First: Create Dacc wallet
+import { createDaccWallet } from "dacc-js";
+
+const wallet = await createDaccWallet({
+ passwordSecretkey: 'my$Password#12+...',
+});
+console.log("wallet:", wallet); // {address, daccPublickey}
+
+// ----------------------------- //
+
+// Example: Integration with ethers.js
+import { allowDaccWallet } from "dacc-js"; // npm install dacc-js
+import { ethers } from 'ethers';
+
+const wallet = await allowDaccWallet({
+  daccPublickey: 'stored-encrypted-key',
+  passwordSecretkey: 'user-password'
+}); // {address, privateKey}
+
+// Convert to ethers wallet
+const ethersWallet = new ethers.Wallet(wallet.privateKey);
+
+// Use with any provider
+const provider = new ethers.providers.JsonRpcProvider('https://rpc-url');
+const connectedWallet = ethersWallet.connect(provider);
+
+// Ready for transactions
+const tx = await connectedWallet.sendTransaction({
+  to: '0x...',
+  value: ethers.utils.parseEther('0.1')
+});
+```
+
+```typescript
+// First: Create Dacc wallet
+import { createDaccWallet } from "dacc-js";
+
+const wallet = await createDaccWallet({
+ passwordSecretkey: 'my$Password#12+...',
+});
+console.log("wallet:", wallet); // {address, daccPublickey}
+
+// ----------------------------- //
+
+// Example: Integration with viem
+import { allowDaccWallet } from "dacc-js"; // npm install dacc-js
+import { createWalletClient, http } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const wallet = await allowDaccWallet({
+  daccPublickey: 'stored-encrypted-key', 
+  passwordSecretkey: 'user-password' 
+}); // {address, privateKey}
+
+const account = privateKeyToAccount(wallet.privateKey);
+const client = createWalletClient({
+  account,
+  transport: http('https://rpc-url')
+});
+
+// Ready for Web3 interactions
+```
