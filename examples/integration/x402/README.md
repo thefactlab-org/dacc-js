@@ -24,7 +24,7 @@ bun run 1-create-dacc.ts
 ```
 > The daccPublickey to address should also contain USDC. Please check and send USDC.
 
-1. Send payments for Buyer to 2.
+3. Send payments for Buyer to 2.
 ```bash
 bun run 2-buyer-axios.ts
 ```
