@@ -5,21 +5,21 @@ The `daccSendToken` function allows you to **send ERC20 tokens** from a Dacc wal
 ## Import
 
 ```ts 
-import { daccSendToken } from "dacc-js";
+import { daccSendToken } from 'dacc-js';
 ```
 
 ## Usage
 
 ```ts 
-import { daccSendToken } from "dacc-js";
+import { daccSendToken } from 'dacc-js';
 // [!code word:optimismSepolia]
-import { optimismSepolia } from "viem/chains"; // used `viem` - npm i viem
+import { optimismSepolia } from 'viem/chains'; // used `viem` - npm i viem
 
 const tx = await daccSendToken({
   // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function
   daccPublickey: 'daccPublickey_0x123_XxX..',
   // address: '0x123address...', // Only the address created is set to `publicEncryption: true`
-  passwordSecretkey: 'my+Password#123...',
+  passwordSecretkey: 'my+Password#123..',
   network: optimismSepolia,
   tokenAddress: '0xTokenContract...',
   to: '0xRecipient...',

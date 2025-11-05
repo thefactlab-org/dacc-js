@@ -5,15 +5,15 @@ The `daccSendNative` function allows you to **send native cryptocurrency** (ETH,
 ## Import
 
 ```ts 
-import { daccSendNative } from "dacc-js";
+import { daccSendNative } from 'dacc-js';
 ```
 
 ## Usage
 
 ```ts 
-import { daccSendNative } from "dacc-js";
+import { daccSendNative } from 'dacc-js';
 // [!code word:optimismSepolia]
-import { optimismSepolia } from "viem/chains"; // used `viem` - npm i viem
+import { optimismSepolia } from 'viem/chains'; // used `viem` - npm i viem
 
 const tx = await daccSendNative({
   // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function

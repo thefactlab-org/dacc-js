@@ -5,15 +5,15 @@ The `daccSignTypedData` function allows you to **sign EIP-712 typed data** using
 ## Import
 
 ```ts 
-import { daccSignTypedData } from "dacc-js";
+import { daccSignTypedData } from 'dacc-js';
 ```
 
 ## Usage
 
 ```ts 
-import { daccSignTypedData } from "dacc-js";
+import { daccSignTypedData } from 'dacc-js';
 // [!code word:optimismSepolia]
-import { optimismSepolia } from "viem/chains"; // used `viem` - npm i viem
+import { optimismSepolia } from 'viem/chains'; // used `viem` - npm i viem
 
 const signedData = await daccSignTypedData({
   // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function

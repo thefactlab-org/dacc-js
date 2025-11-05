@@ -53,6 +53,11 @@ export default defineConfig({
             { text: 'Sign Authorize EIP-7702', link: '/functions/dacc-signature/sign-authorize-eip7702' },
             ] 
           },
+          { text: 'Dacc Integrations', 
+            items: [
+            { text: 'x402', link: '/functions/dacc-integrations/x402' },
+            ] 
+          },
         ]
       },
       { text: 'Privacy & Terms', link: '/privacy-terms' },

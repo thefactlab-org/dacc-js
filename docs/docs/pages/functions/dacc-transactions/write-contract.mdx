@@ -5,15 +5,15 @@ The `daccWriteContract` function allows you to **execute write transactions on s
 ## Import
 
 ```ts 
-import { daccWriteContract } from "dacc-js";
+import { daccWriteContract } from 'dacc-js';
 ```
 
 ## Usage
 
 ```ts 
-import { daccWriteContract } from "dacc-js";
+import { daccWriteContract } from 'dacc-js';
 // [!code word:sepolia]
-import { sepolia } from "viem/chains"; // used `viem` - npm i viem
+import { sepolia } from 'viem/chains'; // used `viem` - npm i viem
 
 const tx = await daccWriteContract({
   // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function
