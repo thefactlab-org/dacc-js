@@ -1,0 +1,318 @@
+# Get Balance Token (getBalanceToken) [Check ERC20 token balance]
+
+The `getBalanceToken` function allows you to **check the ERC20 token balance** (USDC, USDT, ERC20, etc.) of any wallet address on a specified blockchain network. It also retrieves token details like decimals, symbol, and name. (This is a read-only)
+
+## Import
+
+```ts 
+import { getBalanceToken } from "dacc-js";
+```
+
+## Usage
+
+```ts 
+import { getBalanceToken } from "dacc-js";
+// [!code word:optimismSepolia]
+import { optimismSepolia } from "viem/chains"; // used `viem` - npm i viem
+
+const balance = await getBalanceToken({
+  address: "0x123...",
+  tokenAddress: "0xUSDC...",
+  network: optimismSepolia,
+});
+
+console.log("Balance:", balance);
+console.log("Formatted:", balance.balanceFormatted, balance.symbol);
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`address`** | `0x${string}` | The wallet address to check balance for. |
+| **`tokenAddress`** | `0x${string}` | The ERC20 token contract address. |
+| **`network`** | `Chain` | The blockchain network object to query. |
+
+## Return Value
+The response result is an object containing:
+```ts
+{
+  address: "0x123...",
+  tokenAddress: "0xUSDC...",
+  chainId: 11155420,
+  balance: "1000000",                  // Balance in smallest unit (string)
+  balanceFormatted: "1.0",             // Balance in token units (string)
+  decimals: 6,                         // Token decimals
+  symbol: "USDC",                      // Token symbol
+  name: "USD Coin"                     // Token name
+}
+```
+
+## Parameters
+
+### address
+
+- **Type:** `0x${string}`
+
+The wallet address to check the ERC20 token balance for.
+
+```ts
+const balance = await getBalanceToken({
+  address: "0x123...", // [!code focus]
+  tokenAddress: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+  network: optimism,
+});
+```
+
+### tokenAddress
+
+- **Type:** `0x${string}`
+
+The ERC20 token contract address to query the balance from.
+
+```ts
+// USDC on Optimism
+const usdcBalance = await getBalanceToken({
+  address: "0x123...",
+  tokenAddress: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", // [!code focus]
+  network: optimism,
+});
+
+// DAI on Ethereum Mainnet
+const daiBalance = await getBalanceToken({
+  address: "0x123...",
+  tokenAddress: "0x6B175474E89094C44Da98b954EedeAC495271d0F", // [!code focus]
+  network: mainnet,
+});
+```
+
+### network
+
+- **Type:** `Chain`
+
+The blockchain network to query the token balance from. You can use any chain from `viem/chains` or define a custom chain.
+
+```ts
+import { mainnet, polygon, optimism } from "viem/chains";
+
+// Ethereum Mainnet
+const ethTokenBalance = await getBalanceToken({
+  address: "0x123...",
+  tokenAddress: "0xUSDC...",
+  network: mainnet, // [!code focus]
+});
+
+// Polygon
+const polygonTokenBalance = await getBalanceToken({
+  address: "0x123...",
+  tokenAddress: "0xUSDC...",
+  network: polygon, // [!code focus]
+});
+```
+
+## Examples
+
+### Check USDC Balance on Optimism
+
+```ts
+import { getBalanceToken } from "dacc-js";
+import { optimism } from "viem/chains";
+
+const balance = await getBalanceToken({
+  address: "0x123...",
+  tokenAddress: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", // USDC on Optimism
+  network: optimism,
+});
+
+console.log(`Token: ${balance.name} (${balance.symbol})`);
+console.log(`Balance: ${balance.balanceFormatted} ${balance.symbol}`);
+console.log(`Decimals: ${balance.decimals}`);
+// Output: Balance: 100.5 USDC
+```
+
+### Check Multiple Token Balances
+
+```ts
+import { getBalanceToken } from "dacc-js";
+import { mainnet } from "viem/chains";
+
+const walletAddress = "0x123...";
+
+const tokens = [
+  { name: "USDC", address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" },
+  { name: "USDT", address: "0xdAC17F958D2ee523a2206206994597C13D831ec7" },
+  { name: "DAI", address: "0x6B175474E89094C44Da98b954EedeAC495271d0F" },
+];
+
+const balances = await Promise.all(
+  tokens.map((token) =>
+    getBalanceToken({
+      address: walletAddress,
+      tokenAddress: token.address,
+      network: mainnet,
+    })
+  )
+);
+
+balances.forEach((balance) => {
+  console.log(`${balance.symbol}: ${balance.balanceFormatted}`);
+});
+```
+
+### Check Token Balance Across Multiple Chains
+
+```ts
+import { getBalanceToken } from "dacc-js";
+import { mainnet, polygon, optimism, arbitrum } from "viem/chains";
+
+const walletAddress = "0x123...";
+
+// USDC addresses on different chains
+const usdcAddresses = {
+  ethereum: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  polygon: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+  optimism: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+  arbitrum: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+};
+
+const [ethBalance, polyBalance, opBalance, arbBalance] = await Promise.all([
+  getBalanceToken({ address: walletAddress, tokenAddress: usdcAddresses.ethereum, network: mainnet }),
+  getBalanceToken({ address: walletAddress, tokenAddress: usdcAddresses.polygon, network: polygon }),
+  getBalanceToken({ address: walletAddress, tokenAddress: usdcAddresses.optimism, network: optimism }),
+  getBalanceToken({ address: walletAddress, tokenAddress: usdcAddresses.arbitrum, network: arbitrum }),
+]);
+
+console.log(`Ethereum: ${ethBalance.balanceFormatted} USDC`);
+console.log(`Polygon: ${polyBalance.balanceFormatted} USDC`);
+console.log(`Optimism: ${opBalance.balanceFormatted} USDC`);
+console.log(`Arbitrum: ${arbBalance.balanceFormatted} USDC`);
+```
+
+### Display Token Balance in UI with Token Info
+
+```tsx
+import { useState, useEffect } from "react";
+import { getBalanceToken } from "dacc-js";
+import { optimism } from "viem/chains";
+
+function TokenBalanceDisplay({ walletAddress, tokenAddress }) {
+  const [balance, setBalance] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchBalance() {
+      try {
+        setLoading(true);
+        const result = await getBalanceToken({
+          address: walletAddress,
+          tokenAddress: tokenAddress,
+          network: optimism,
+        });
+        setBalance(result);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching balance:", err);
+        setError("Failed to fetch balance");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchBalance();
+  }, [walletAddress, tokenAddress]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div className="token-balance">
+      <h3>{balance?.name} ({balance?.symbol})</h3>
+      <p className="balance">{balance?.balanceFormatted} {balance?.symbol}</p>
+      <div className="details">
+        <p>Token Address: {balance?.tokenAddress}</p>
+        <p>Decimals: {balance?.decimals}</p>
+        <p>Chain ID: {balance?.chainId}</p>
+      </div>
+    </div>
+  );
+}
+```
+
+### Check if User Has Sufficient Balance
+
+```ts
+import { getBalanceToken } from "dacc-js";
+import { optimism } from "viem/chains";
+
+async function hasEnoughBalance(
+  userAddress: `0x${string}`,
+  tokenAddress: `0x${string}`,
+  requiredAmount: number
+): Promise<boolean> {
+  const balance = await getBalanceToken({
+    address: userAddress,
+    tokenAddress: tokenAddress,
+    network: optimism,
+  });
+
+  const balanceNumber = parseFloat(balance.balanceFormatted);
+  return balanceNumber >= requiredAmount;
+}
+
+// Usage
+const hasEnough = await hasEnoughBalance(
+  "0x123...",
+  "0xUSDC...",
+  100 // Require at least 100 USDC
+);
+
+if (hasEnough) {
+  console.log("User has sufficient balance");
+} else {
+  console.log("Insufficient balance");
+}
+```
+
+### Create a Token Portfolio Dashboard
+
+```ts
+import { getBalanceToken } from "dacc-js";
+import { mainnet } from "viem/chains";
+
+interface TokenConfig {
+  name: string;
+  address: `0x${string}`;
+  symbol: string;
+}
+
+const popularTokens: TokenConfig[] = [
+  { name: "USD Coin", address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", symbol: "USDC" },
+  { name: "Tether USD", address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", symbol: "USDT" },
+  { name: "Dai Stablecoin", address: "0x6B175474E89094C44Da98b954EedeAC495271d0F", symbol: "DAI" },
+  { name: "Wrapped BTC", address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", symbol: "WBTC" },
+];
+
+async function getPortfolioBalances(walletAddress: `0x${string}`) {
+  const balances = await Promise.all(
+    popularTokens.map((token) =>
+      getBalanceToken({
+        address: walletAddress,
+        tokenAddress: token.address,
+        network: mainnet,
+      })
+    )
+  );
+
+  return balances
+    .filter((balance) => parseFloat(balance.balanceFormatted) > 0)
+    .map((balance) => ({
+      token: balance.symbol,
+      balance: balance.balanceFormatted,
+      name: balance.name,
+    }));
+}
+
+// Usage
+const portfolio = await getPortfolioBalances("0x123...");
+console.log("Portfolio:", portfolio);
+```

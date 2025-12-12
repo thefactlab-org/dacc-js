@@ -1,0 +1,15 @@
+{
+  "name": "get-balance-token",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "dacc-js": "^0.0.5"
+  }
+}

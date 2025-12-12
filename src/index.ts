@@ -20,3 +20,8 @@ export { daccSignTypedData } from "./functions/signatures/daccSignTypedData";
 export type { TypeDaccSignTypedData } from "./functions/signatures/daccSignTypedData";
 export { daccSignAuthorizeEIP7702 } from "./functions/signatures/daccSignAuthorizeEIP7702";
 export type { TypeDaccSignAuthorizeEIP7702 } from "./functions/signatures/daccSignAuthorizeEIP7702";
+
+export { getBalanceNative } from "./functions/balance/getBalanceNative";
+export type { TypeGetBalanceNative, ReturnGetBalanceNative } from "./functions/balance/getBalanceNative";
+export { getBalanceToken } from "./functions/balance/getBalanceToken";
+export type { TypeGetBalanceToken, ReturnGetBalanceToken } from "./functions/balance/getBalanceToken";

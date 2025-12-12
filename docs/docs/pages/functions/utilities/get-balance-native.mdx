@@ -1,0 +1,188 @@
+# Get Balance Native (getBalanceNative) [Check native token balance]
+
+The `getBalanceNative` function allows you to **check the native cryptocurrency balance** (ETH, etc.) of any wallet address on a specified blockchain network. (This is a read-only)
+
+## Import
+
+```ts 
+import { getBalanceNative } from "dacc-js";
+```
+
+## Usage
+
+```ts 
+import { getBalanceNative } from "dacc-js";
+// [!code word:optimismSepolia]
+import { optimismSepolia } from "viem/chains"; // used `viem` - npm i viem
+
+const balance = await getBalanceNative({
+  address: "0x123...",
+  network: optimismSepolia,
+});
+
+console.log("Balance:", balance);
+console.log("Formatted:", balance.balanceFormatted, "ETH");
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`address`** | `0x${string}` | The wallet address to check balance for. |
+| **`network`** | `Chain` | The blockchain network object to query. |
+
+## Return Value
+The response result is an object containing:
+```ts
+{
+  address: "0x123...",
+  chainId: 11155420,
+  balance: "1000000000000000000",      // Balance in wei (string)
+  balanceFormatted: "1.0"              // Balance in ether (string)
+}
+```
+
+## Parameters
+
+### address
+
+- **Type:** `0x${string}`
+
+The wallet address to check the native token balance for.
+
+```ts
+const balance = await getBalanceNative({
+  address: "0x123...", // [!code focus]
+  network: optimismSepolia,
+});
+```
+
+### network
+
+- **Type:** `Chain`
+
+The blockchain network to query the balance from. You can use any chain from `viem/chains` or define a custom chain.
+
+```ts
+import { mainnet, polygon, optimism } from "viem/chains";
+
+// Ethereum Mainnet
+const ethBalance = await getBalanceNative({
+  address: "0x123...",
+  network: mainnet, // [!code focus]
+});
+
+// Polygon
+const maticBalance = await getBalanceNative({
+  address: "0x123...",
+  network: polygon, // [!code focus]
+});
+
+// Optimism
+const opBalance = await getBalanceNative({
+  address: "0x123...",
+  network: optimism, // [!code focus]
+});
+```
+
+## Examples
+
+### Check ETH Balance on Mainnet
+
+```ts
+import { getBalanceNative } from "dacc-js";
+import { mainnet } from "viem/chains";
+
+const balance = await getBalanceNative({
+  address: "0x123...",
+  network: mainnet,
+});
+
+console.log(`Address: ${balance.address}`);
+console.log(`Chain ID: ${balance.chainId}`);
+console.log(`Balance: ${balance.balanceFormatted} ETH`);
+// Output: Balance: 1.5 ETH
+```
+
+### Check Balance on Multiple Chains
+
+```ts
+import { getBalanceNative } from "dacc-js";
+import { mainnet, polygon, optimism } from "viem/chains";
+
+const walletAddress = "0x123...";
+
+const [ethBalance, maticBalance, opBalance] = await Promise.all([
+  getBalanceNative({ address: walletAddress, network: mainnet }),
+  getBalanceNative({ address: walletAddress, network: polygon }),
+  getBalanceNative({ address: walletAddress, network: optimism }),
+]);
+
+console.log(`ETH: ${ethBalance.balanceFormatted}`);
+console.log(`MATIC: ${maticBalance.balanceFormatted}`);
+console.log(`OP: ${opBalance.balanceFormatted}`);
+```
+
+### Check Balance with Custom Chain
+
+```ts
+import { getBalanceNative } from "dacc-js";
+import { defineChain } from "viem";
+
+const myCustomChain = defineChain({
+  id: 123456,
+  name: "My Custom Chain",
+  nativeCurrency: { name: "Custom Token", symbol: "CTK", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc.mycustomchain.com"] },
+  },
+});
+
+const balance = await getBalanceNative({
+  address: "0x123...",
+  network: myCustomChain,
+});
+
+console.log(`Balance: ${balance.balanceFormatted} CTK`);
+```
+
+### Display Balance in UI
+
+```tsx
+import { useState, useEffect } from "react";
+import { getBalanceNative } from "dacc-js";
+import { optimismSepolia } from "viem/chains";
+
+function BalanceDisplay({ walletAddress }) {
+  const [balance, setBalance] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchBalance() {
+      try {
+        const result = await getBalanceNative({
+          address: walletAddress,
+          network: optimismSepolia,
+        });
+        setBalance(result);
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchBalance();
+  }, [walletAddress]);
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h3>Wallet Balance</h3>
+      <p>Address: {balance?.address}</p>
+      <p>Balance: {balance?.balanceFormatted} ETH</p>
+      <p>Chain ID: {balance?.chainId}</p>
+    </div>
+  );
+}
+```

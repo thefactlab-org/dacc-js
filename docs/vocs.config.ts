@@ -53,9 +53,15 @@ export default defineConfig({
             { text: 'Sign Authorize EIP-7702', link: '/functions/dacc-signature/sign-authorize-eip7702' },
             ] 
           },
-          { text: 'Dacc Integrations', 
+          { text: 'Utilities',
             items: [
-            { text: 'x402', link: '/functions/dacc-integrations/x402' },
+            { text: 'Get Balance Native', link: '/functions/utilities/get-balance-native' },
+            { text: 'Get Balance Token', link: '/functions/utilities/get-balance-token' },
+            ] 
+          },
+          { text: 'Integrations', 
+            items: [
+            { text: 'x402', link: '/functions/integrations/x402' },
             ] 
           },
         ]

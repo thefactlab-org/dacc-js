@@ -1,5 +1,11 @@
 # dacc-js
 
+## 0.0.5
+
+### Patch Changes
+
+- Update: v0.0.5 - Utilities Explore the utility functions that Dacc-js provides for common blockchain tasks, such as balance checking and more. 1.getBalanceNative 2.getBalanceToken
+
 ## 0.0.4
 
 ### Patch Changes

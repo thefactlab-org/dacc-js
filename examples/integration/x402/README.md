@@ -1,4 +1,4 @@
-# test-x402
+# x402
 
 To install dependencies:
 
