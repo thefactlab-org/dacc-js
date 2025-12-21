@@ -5,13 +5,13 @@ The `getBalanceNative` function allows you to **check the native cryptocurrency 
 ## Import
 
 ```ts 
-import { getBalanceNative } from "dacc-js";
+import { getBalanceNative } from 'dacc-js';
 ```
 
 ## Usage
 
 ```ts 
-import { getBalanceNative } from "dacc-js";
+import { getBalanceNative } from 'dacc-js';
 // [!code word:optimismSepolia]
 import { optimismSepolia } from "viem/chains"; // used `viem` - npm i viem
 
@@ -89,7 +89,7 @@ const opBalance = await getBalanceNative({
 ### Check ETH Balance on Mainnet
 
 ```ts
-import { getBalanceNative } from "dacc-js";
+import { getBalanceNative } from 'dacc-js';
 import { mainnet } from "viem/chains";
 
 const balance = await getBalanceNative({
@@ -106,7 +106,7 @@ console.log(`Balance: ${balance.balanceFormatted} ETH`);
 ### Check Balance on Multiple Chains
 
 ```ts
-import { getBalanceNative } from "dacc-js";
+import { getBalanceNative } from 'dacc-js';
 import { mainnet, polygon, optimism } from "viem/chains";
 
 const walletAddress = "0x123...";
@@ -125,7 +125,7 @@ console.log(`OP: ${opBalance.balanceFormatted}`);
 ### Check Balance with Custom Chain
 
 ```ts
-import { getBalanceNative } from "dacc-js";
+import { getBalanceNative } from 'dacc-js';
 import { defineChain } from "viem";
 
 const myCustomChain = defineChain({
@@ -149,7 +149,7 @@ console.log(`Balance: ${balance.balanceFormatted} CTK`);
 
 ```tsx
 import { useState, useEffect } from "react";
-import { getBalanceNative } from "dacc-js";
+import { getBalanceNative } from 'dacc-js';
 import { optimismSepolia } from "viem/chains";
 
 function BalanceDisplay({ walletAddress }) {

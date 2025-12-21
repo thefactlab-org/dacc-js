@@ -24,8 +24,10 @@ bun add dacc-js x402-hono x402-axios hono axios @hono/node-server dotenv
 ## Usage
 
 ```ts
-import axios from 'axios';
-import { withPaymentInterceptor, createSigner } from 'x402-axios';
+import axios from "axios";
+import { x402Client, wrapAxiosWithPayment, x402HTTPClient } from "@x402/axios";
+import { registerExactEvmScheme } from "@x402/evm/exact/client";
+import { privateKeyToAccount } from "viem/accounts";
 import { allowDaccWallet } from 'dacc-js';
 
 // Access Dacc Wallet
@@ -35,10 +37,12 @@ const { privateKey } = await allowDaccWallet({ // [!code focus] dacc-js
 }); // [!code focus]
 
 // Create payment signer
-const signer = await createSigner("base-sepolia", privateKey); // [!code focus] x402-axios
+const signer = privateKeyToAccount(privateKey as `0x${string}`); // viem
+const client = new x402Client(); 
+registerExactEvmScheme(client, { signer }); // [!code focus] x402-axios
 
 // Setup axios client with payment interceptor
-const api = withPaymentInterceptor( // [!code hl]
+const api = wrapAxiosWithPayment( // [!code hl]
   axios.create({ baseURL: 'https://api.example.com' }), // [!code hl]
   signer, // [!code hl]
 ); // [!code hl]
@@ -70,9 +74,9 @@ console.log(response.data);
 ### AI & ML Services
 ```ts
 {
-  "/chat-gpt": { price: "$0.01", network: "base-sepolia" },
-  "/image-generate": { price: "$0.05", network: "base-sepolia" },
-  "/data-analysis": { price: "$0.002", network: "base-sepolia" }
+  "/chat-gpt": { price: "$0.01", network: "eip155:84532" },
+  "/image-generate": { price: "$0.05", network: "eip155:84532" },
+  "/data-analysis": { price: "$0.002", network: "eip155:84532" }
 }
 ```
 > examples: https://github.com/coinbase/x402/tree/main/examples
@@ -80,9 +84,9 @@ console.log(response.data);
 ### Data & Analytics  
 ```ts
 {
-  "/weather": { price: "$0.001", network: "base-sepolia" },
-  "/market-data": { price: "$0.01", network: "base-sepolia" },
-  "/crypto-prices": { price: "$0.002", network: "base-sepolia" }
+  "/weather": { price: "$0.001", network: "eip155:84532" },
+  "/market-data": { price: "$0.01", network: "eip155:84532" },
+  "/crypto-prices": { price: "$0.002", network: "eip155:84532" }
 }
 ```
 > examples: https://github.com/coinbase/x402/tree/main/examples
@@ -90,9 +94,9 @@ console.log(response.data);
 ### Premium Content
 ```ts
 {
-  "/premium-article": { price: "$0.1", network: "base-sepolia" },
-  "/hd-image": { price: "$0.02", network: "base-sepolia" },
-  "/video-stream": { price: "$0.5", network: "base-sepolia" }
+  "/premium-article": { price: "$0.1", network: "eip155:84532" },
+  "/hd-image": { price: "$0.02", network: "eip155:84532" },
+  "/video-stream": { price: "$0.5", network: "eip155:84532" }
 }
 ```
 > examples: https://github.com/coinbase/x402/tree/main/examples
@@ -120,89 +124,94 @@ console.log("⚠️  Fund", wallet.address, "with USDC for payments");
 ### Server Setup - Seller
 
 ```ts
-import { config } from "dotenv";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { paymentMiddleware } from "x402-hono";
-
-config();
-
-const facilitatorUrl = process.env.FACILITATOR_URL || 'https://www.x402.org/facilitator';
-const payTo = process.env.PAY_TO || '0x000000000000000000000000000000000000dEaD';
-const network = process.env.NETWORK || 'base-sepolia';
+import { paymentMiddleware } from "@x402/hono";
+import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
+import { registerExactEvmScheme } from "@x402/evm/exact/server";
 
 const app = new Hono();
+const payTo = process.env.PAY_TO  as `0x${string}` || '0x000000000000000000000000000000000000dEaD' as `0x${string}`;
+const port = process.env.PORT || 4021;
+const network = process.env.NETWORK || 'eip155:84532';
+
+const facilitatorClient = new HTTPFacilitatorClient({
+  url: process.env.FACILITATOR_URL || "https://x402.org/facilitator"
+});
+
+const server = new x402ResourceServer(facilitatorClient);
+registerExactEvmScheme(server);
 
 app.use(
   paymentMiddleware(
-    payTo,
     {
       "/weather": {
-        price: "$0.001",
-        network,
-      },
-      "/premium": {
-        price: "$0.01",
-        network,
+        accepts: [
+          {
+            scheme: "exact",
+            price: "$0.001",
+            network: network as `eip155:${number}`,
+            payTo,
+          },
+        ],
+        description: "dacc-js X x402 for content testing.",
+        mimeType: "application/json",
       },
     },
-    {
-      url: facilitatorUrl,
-    },
+    server,
   ),
 );
 
-app.get("/weather", c => {
-  return c.json({
-    report: {
-      weather: "sunny",
-      temperature: 70,
-    },
-  });
+app.get("/weather", (c) => {
+  return c.json({ message: "This content is a successful dacc-js x x402 download." });
 });
 
-serve({
-  fetch: app.fetch,
-  port: 4021,
-});
+serve({ fetch: app.fetch, port: Number(port) });
+console.log(`Seller server is running on port: http://localhost:${port}`);
+console.log(`Serving /weather endpoint that costs.`);
 ```
 
 ### Client Setup - Buyer
 
 ```ts
 import axios from "axios";
-import { config } from "dotenv";
-import { withPaymentInterceptor, decodeXPaymentResponse, createSigner } from "x402-axios";
+import { x402Client, wrapAxiosWithPayment, x402HTTPClient } from "@x402/axios";
+import { registerExactEvmScheme } from "@x402/evm/exact/client";
+import { privateKeyToAccount } from "viem/accounts";
 import { allowDaccWallet } from "dacc-js";
 
-config();
+// Dacc-js setup
+const daccPublickey = process.env.DACC_PUBLICKEY || ''; // Dacc Wallet public key from created wallet
+const passwordSecretkey = process.env.PASSWORD_SECRETKEY || ''; // password to decrypt the private key
+const { privateKey} = await allowDaccWallet({
+  daccPublickey: daccPublickey, // Dacc Wallet public key from created wallet
+  passwordSecretkey: passwordSecretkey, // password to decrypt the private key
+});
 
-const baseURL = process.env.RESOURCE_SERVER_URL || 'http://localhost:4021';
-const daccPublickey = process.env.DACC_PUBLICKEY || '';
-const passwordSecretkey = process.env.PASSWORD_SECRETKEY || '';
+// Create signer
+const signer = privateKeyToAccount(privateKey as `0x${string}`);
+const endpointPath = process.env.ENDPOINT_PATH || '/weather' as string; 
 
-async function main(): Promise<void> {
-  // Access Dacc Wallet
-  const { privateKey } = await allowDaccWallet({
-    daccPublickey: daccPublickey,
-    passwordSecretkey: passwordSecretkey,
-  });
+// Create x402 client and register EVM scheme
+const client = new x402Client();
+registerExactEvmScheme(client, { signer });
 
-  const signer = await createSigner("base-sepolia", privateKey);
+// Create an Axios instance with payment handling
+const api = wrapAxiosWithPayment(
+  axios.create({ baseURL: process.env.RESOURCE_SERVER_URL || "http://localhost:4021" }),
+  client,
+);
 
-  const api = withPaymentInterceptor(
-    axios.create({ baseURL }),
-    signer,
-  );
+// Make request - payment is handled automatically
+const response = await api.get(endpointPath);
+console.log("Response:", response.data);
 
-  const response = await api.get('/weather');
-  console.log(response.data);
-
-  const paymentResponse = decodeXPaymentResponse(response.headers["x-payment-response"]);
-  console.log("Payment details:", paymentResponse);
-}
-
-main();
+// Get payment receipt
+const httpClient = new x402HTTPClient(client);
+const paymentResponse = httpClient.getPaymentSettleResponse(
+  (name) => response.headers[name.toLowerCase()]
+);
+console.log("Payment settled:", paymentResponse);
 ```
 
 ## Notes
