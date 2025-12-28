@@ -12,13 +12,13 @@ The JWT token contains sensitive wallet access credentials. **Ensure the applica
 ## Import
 
 ```ts 
-import { verifySessionTimeWalletWithJWT } from "dacc-js";
+import { verifySessionTimeWalletWithJWT } from 'dacc-js';
 ```
 
 ## Usage
 
 ```ts 
-import { verifySessionTimeWalletWithJWT } from "dacc-js";
+import { verifySessionTimeWalletWithJWT } from 'dacc-js';
 
 const walletJWT = await verifySessionTimeWalletWithJWT({
   jwt: 'eyJhZGRyZXNz...',
@@ -76,7 +76,7 @@ const walletJWT = await verifySessionTimeWalletWithJWT({
 ### Complete session workflow (Create → Verify)
 
 ```ts
-import { allowSessionTimeWalletWithJWT, verifySessionTimeWalletWithJWT } from "dacc-js";
+import { allowSessionTimeWalletWithJWT, verifySessionTimeWalletWithJWT } from 'dacc-js';
 
 // Step 1: Create session token from encrypted wallet
 const sessionJWT = await allowSessionTimeWalletWithJWT({

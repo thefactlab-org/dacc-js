@@ -89,6 +89,10 @@ export default defineConfig({
         {
           text: "Changelog",
           link: "https://github.com/thefactlab-org/dacc-js/blob/main/CHANGELOG.md",
+        },
+        {
+          text: "Contributing",
+          link: "https://github.com/thefactlab-org/dacc-js/pulls",
         }
       ],
     },
