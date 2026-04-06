@@ -61,7 +61,7 @@ export async function encryptHash(
 
   const key = await subtle.importKey(
     "raw",
-    hash,
+    Uint8Array.from(hash),
     { name: "AES-GCM" },
     false,
     ["encrypt"]
@@ -70,7 +70,7 @@ export async function encryptHash(
   const encrypted = await subtle.encrypt(
     { name: "AES-GCM", iv },
     key,
-    hexToBytes(pk as `0x${string}`)
+    Uint8Array.from(hexToBytes(pk as `0x${string}`))
   );
 
   const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
@@ -101,7 +101,7 @@ export async function decryptHash(
 
   const key = await subtle.importKey(
     "raw",
-    hash,
+    Uint8Array.from(hash),
     { name: "AES-GCM" },
     false,
     ["decrypt"]
@@ -116,7 +116,7 @@ export async function decryptHash(
 async function signHMAC(payload: string, secret: string): Promise<string> {
   const key = await subtle.importKey(
     "raw",
-    new TextEncoder().encode(secret),
+    Uint8Array.from(new TextEncoder().encode(secret)),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
@@ -128,12 +128,12 @@ async function signHMAC(payload: string, secret: string): Promise<string> {
 async function verifyHMAC(payload: string, secret: string, signature: string): Promise<boolean> {
   const key = await subtle.importKey(
     "raw",
-    new TextEncoder().encode(secret),
+    Uint8Array.from(new TextEncoder().encode(secret)),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["verify"]
   );
-  return subtle.verify("HMAC", key, base64UrlDecode(signature), new TextEncoder().encode(payload));
+  return subtle.verify("HMAC", key, Uint8Array.from(base64UrlDecode(signature)), new TextEncoder().encode(payload));
 }
 
 /**

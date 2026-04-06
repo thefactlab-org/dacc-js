@@ -53,6 +53,11 @@ export default defineConfig({
             { text: 'Sign Authorize EIP-7702', link: '/functions/dacc-signature/sign-authorize-eip7702' },
             ] 
           },
+          { text: 'Dacc Ai', 
+            items: [
+            { text: 'Ai Agent', link: '/functions/dacc-ai/ai-agent' },
+            ] 
+          },
           { text: 'Utilities',
             items: [
             { text: 'Get Balance Native', link: '/functions/utilities/get-balance-native' },
@@ -66,6 +71,7 @@ export default defineConfig({
           },
         ]
       },
+      { text: 'llms-full.txt', link: 'https://dacc-js.thefactlab.org/llms-full.txt' },
       { text: 'Privacy & Terms', link: '/privacy-terms' },
     ],
   },

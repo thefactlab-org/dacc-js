@@ -104,7 +104,7 @@ export async function createDaccWallet(
 
   const keyPass = await crypto.subtle.importKey(
     "raw",
-    keyHash,
+    Uint8Array.from(keyHash),
     { name: "AES-GCM" },
     false,
     ["encrypt"]
@@ -113,7 +113,7 @@ export async function createDaccWallet(
   const encryptedBuffer = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     keyPass,
-    hexToBytes(privateKey)
+    Uint8Array.from(hexToBytes(privateKey))
   );
 
   const combined = new Uint8Array(

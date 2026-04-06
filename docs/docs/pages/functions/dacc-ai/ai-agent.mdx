@@ -1,0 +1,357 @@
+# AI Agent (daccAiAgent) [A function to create an AI Agent for blockchain interactions]
+
+The `daccAiAgent` function creates an AI-powered agent that can **chat and perform blockchain actions** on behalf of the user. The AI can execute transactions, check balances, and interact with smart contracts via natural language.
+
+:::info
+- **daccAiAgent** is currently in **beta** and is an early-stage release. At this stage, it supports **token transfers only**.
+- AI-generated commands may be processed without additional confirmation. Please review all inputs carefully before submitting.
+:::
+
+## Import
+
+```ts 
+import { daccAiAgent } from 'dacc-js';
+```
+
+## Usage
+
+```ts 
+import { daccAiAgent } from 'dacc-js';
+import { optimismSepolia, baseSepolia } from 'viem/chains';
+
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  // privateKey: '0xabc123...', // Optional
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia, baseSepolia],
+  tokens: [
+    {
+      name: 'Token1',
+      symbol: 'TOK1',
+      chain: optimismSepolia,
+      address: '0x123...',
+    },
+    {
+      name: 'Token2',
+      symbol: 'TOK2',
+      chain: baseSepolia,
+      address: '0x234...',
+    },
+  ],
+});
+
+// Chat with AI to perform transactions
+const response = await ai.chat("Transfer 0.01 TOK1 to 0xRecipient...");
+console.log('AI response:', response.text);
+
+// Stream chat for real-time responses
+const streamResponse = await ai.streamChat("What's my balance of Token2?");
+for await (const chunk of streamResponse.textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`daccPublickey`** | `string` | The encrypted wallet data from `createDaccWallet`. |
+| **`passwordSecretkey`** | `string` | The password for decrypting the wallet. |
+| **`privateKey`** | `0x${string}` | Optional: Direct private key (alternative to daccPublickey + password). |
+| **`llm`** | `LlmConfig` | LLM configuration with `baseURL`, `apiKey`, and `model`. |
+| **`chains`** | `Chain[]` | Array of supported chains (e.g., `[optimismSepolia, baseSepolia]`). |
+| **`tokens`** | `TokenInfo[]` | Array of tokens with `name`, `symbol`, `chain`, and `address`. |
+| **`systemPrompt`** | `string` | Optional: Custom system prompt (defaults to built-in prompt). |
+
+## Return Value
+The response result is an object containing `{chat, streamChat}` methods.
+
+| Method | Parameters | Return Type | Description |
+| :--- | :--- | :--- | :--- |
+| **`chat`** | `message: string` | `Promise<{text: string}>` | Chat with AI to perform blockchain actions. |
+| **`streamChat`** | `message: string` | `Promise<{textStream: AsyncIterable<string>}>` | Stream chat with AI for real-time responses. |
+
+## Parameters
+
+### daccPublickey
+
+- **Type:** `string`
+
+The user's encrypted public key from `createDaccWallet`.
+
+:::note
+When using `daccPublickey`, you **must also provide** `passwordSecretkey` to decrypt the wallet. Remove the `privateKey` parameter when using this method.
+:::
+
+```ts
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..', // [!code focus]
+  passwordSecretkey: 'my+Password#123..', // [!code ++]
+  // privateKey: '0xabc123...', // [!code --]
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia],
+  tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
+});
+```
+
+### passwordSecretkey
+
+- **Type:** `string`
+
+The same password used when creating the wallet with `createDaccWallet`.
+
+```ts
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..', // [!code focus]
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia],
+  tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
+});
+```
+
+### privateKey (optional)
+
+- **Type:** `0x${string}`
+
+Direct private key for wallet access.
+
+:::note
+When using `privateKey`, you **don't need** to provide `daccPublickey` or `passwordSecretkey`. The private key contains all the information needed for signing directly.
+:::
+
+```ts
+const ai = await daccAiAgent({
+  // daccPublickey: 'daccPublickey_0x123_XxX..', // [!code --]
+  // passwordSecretkey: 'my+Password#123..', // [!code --]
+  privateKey: '0xabc123...', // [!code focus]
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia],
+  tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
+});
+```
+
+### llm
+
+- **Type:** `{ baseURL: string; apiKey: string; model: string }`
+
+LLM (Large Language Model) configuration for the AI provider.
+
+:::info
+You can use any AI provider that model supports the **OpenAI-compatible** API only. (e.g [OpenRouter](https://openrouter.ai), and other compatible providers).
+:::
+
+:::tip
+For **local AI models**, we recommend using models with **14B+ parameters** for optimal performance.
+- **Low**: 9B+ parameters
+- **Medium**: 14B+ parameters
+- **High**: 120B+ parameters
+:::
+
+```ts
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1', // [!code focus]
+    apiKey: process.env.OPENROUTER_API_KEY!, // [!code focus]
+    model: 'x-ai/grok-4.1-fast', // [!code focus]
+  },
+  chains: [optimismSepolia],
+  tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
+});
+```
+
+### chains
+
+- **Type:** `Chain[]`
+
+Array of supported blockchain networks from `viem/chains`.
+
+:::note
+Supports multiple chains. Specify the target chain in the chat command if more than one is configured.
+:::
+
+::::note[Custom Chain Network] 
+When using [customChain](/concept/mechanical#custom-networks) click to details.
+:::details 
+```ts
+import { defineChain } from "viem";
+
+const myCustomChain = defineChain({
+  id: 123456,
+  name: "My Custom Chain",
+  network: "myCustomChain",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc-example.com"] }
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer-example.com' },
+  },
+});
+```
+:::
+::::
+
+```ts
+import { optimismSepolia, baseSepolia } from 'viem/chains';
+
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia, baseSepolia], // [!code focus]
+  tokens: [
+    { name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' },
+    { name: 'Token2', symbol: 'TOK2', chain: baseSepolia, address: '0x234...' },
+  ],
+});
+```
+
+### tokens
+
+- **Type:** `TokenInfo[]`
+
+Array of token configurations with `name`, `symbol`, `chain`, and `address`.
+
+:::note
+Tokens are identified by their name or symbol (case-insensitive), so the AI can reference them naturally in chat (e.g., "send 10 TOK1 [chains] to 0x...").
+:::
+
+```ts
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia, baseSepolia],
+  tokens: [ // [!code focus]
+    { name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }, // [!code focus]
+    { name: 'Token2', symbol: 'TOK2', chain: baseSepolia, address: '0x234...' }, // [!code focus]
+  ], // [!code focus]
+});
+```
+
+### systemPrompt (optional)
+
+- **Type:** `string`
+- **Default:** Built-in system prompt
+
+Custom system prompt for the AI agent.
+
+```ts
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia],
+  tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
+  systemPrompt: 'You are a helpful blockchain assistant. Always confirm transactions before executing.', // [!code focus]
+});
+```
+
+## Examples
+
+### Chat with AI to send tokens
+
+```ts
+import { daccAiAgent } from 'dacc-js';
+import { optimismSepolia } from 'viem/chains';
+
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia],
+  tokens: [
+    { name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' },
+  ],
+});
+
+// Ask AI to transfer tokens
+const response = await ai.chat('Transfer 0.01 TOK1 to 0xRecipientAddress...');
+console.log('AI response:', response.text);
+```
+
+### Stream chat for balance inquiry
+
+```ts
+import { daccAiAgent } from 'dacc-js';
+import { baseSepolia } from 'viem/chains';
+
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [baseSepolia],
+  tokens: [
+    { name: 'Token2', symbol: 'TOK2', chain: baseSepolia, address: '0x234...' },
+  ],
+});
+
+// Stream chat for real-time balance inquiry
+const streamResponse = await ai.streamChat("What's my balance of Token2?");
+for await (const chunk of streamResponse.textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+### Use AI with direct private key
+
+```ts
+import { daccAiAgent } from 'dacc-js';
+import { optimismSepolia } from 'viem/chains';
+
+const ai = await daccAiAgent({
+  privateKey: '0xabc123...',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'x-ai/grok-4.1-fast',
+  },
+  chains: [optimismSepolia],
+  tokens: [
+    { name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' },
+  ],
+});
+
+// Ask AI about available tokens
+const tokensResponse = await ai.chat('What tokens do I have available?');
+console.log('Available tokens:', tokensResponse.text);
+```

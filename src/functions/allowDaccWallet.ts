@@ -76,7 +76,7 @@ export async function allowDaccWallet(
 
     const keyPass = await crypto.subtle.importKey(
       "raw",
-      keyHash,
+      Uint8Array.from(keyHash),
       { name: "AES-GCM" },
       false,
       ["decrypt"]

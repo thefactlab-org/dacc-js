@@ -1,5 +1,11 @@
 # dacc-js
 
+## 0.0.6
+
+### Patch Changes
+
+- Update: v0.0.6 - New: Add daccAiAgent for AI-powered wallet interactions.
+
 ## 0.0.5
 
 ### Patch Changes
