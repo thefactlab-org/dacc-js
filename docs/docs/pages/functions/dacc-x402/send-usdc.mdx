@@ -1,0 +1,506 @@
+# Send USDC (daccSendUSDC) [A function to send USDC with gasless transfer]
+
+The `daccSendUSDC` function allows you to **send USDC tokens using gasless transfer** via EIP-712 authorization. A separate relayer account pays for gas while the USDC owner signs the authorization. This uses the `transferWithAuthorization` function available in USDC and compatible tokens.
+
+:::info
+- Gasless transfers use the [transferWithAuthorization](https://github.com/circlefin/stablecoin-evm/blob/master/contracts/v2/FiatTokenV2_2.sol#L105C5-L134C6) function from USDC only
+- The relayer account must have sufficient native tokens (ETH, etc.) to pay for gas fees
+- Official USDC contract addresses: https://developers.circle.com/stablecoins/usdc-contract-addresses
+:::
+
+## Import
+
+```ts 
+import { daccSendUSDC } from 'dacc-js';
+```
+
+## Usage
+
+```ts 
+import { daccSendUSDC } from 'dacc-js';
+// [!code word:baseSepolia]
+import { baseSepolia } from 'viem/chains'; // used `viem` - npm i viem
+
+const tx = await daccSendUSDC({
+  // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  // address: "0xYourAccountAddress..", // Only the address created is set to `publicEncryption: true`
+  passwordSecretkey: "my+Password#123..",
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...' // Must have ETH for gas
+  }
+});
+
+console.log(tx); // {txHash, chainId, from, to, usdcAddress, amount, signature}
+console.log(tx?.txHash); // 0xabc123transaction...
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`account`** | `Account` or `0x${string}` | Conditional: The account to use for signing (Account object is private key). |
+| **`daccPublickey`** | `string` | Conditional: The encrypted wallet data from `createDaccWallet`. |
+| **`address`** | `0x${string}` | Conditional: wallet address from a created with `createDaccWallet` in `publicEncryption: true` mode (can use instead of daccPublickey). |
+| **`passwordSecretkey`** | `string` | Conditional: The user's password used to decrypt the wallet. |
+| **`usdcAddress`** | `USDCContract` | The USDC contract information (address, name, version, decimals). |
+| **`network`** | `Chain` | The blockchain network object to send the transaction on. |
+| **`to`** | `0x${string}` | The recipient's wallet address. |
+| **`amount`** | `number` | The amount of USDC tokens to send. |
+| **`validAfter`** | `number` | Optional: The time after which this is valid (unix time, default: 0). |
+| **`validBefore`** | `number` | Optional: The time before which this is valid (unix time, default: 1h from now). |
+| **`gasless`** | `{ account: 0x${string} }` | Required: Object containing the relayer account (private key) that pays for gas. |
+
+## Return Value
+The response result is an object containing `{txHash, chainId, from, to, usdcAddress, amount, signature}`
+
+## Parameters
+
+### account (conditional)
+
+- **Type:** `Account` | `0x${string}`
+
+The user's account to use for signing the authorization.
+
+:::note
+When using the `account` parameter, you **don't need** to provide `daccPublickey`, `address`, or `passwordSecretkey`. The account contains the private key needed for signing directly.
+:::
+
+```ts
+const tx = await daccSendUSDC({
+  account: "0xPrivatekey...", // [!code focus] Can call with `allowDaccWallet` function
+//   daccPublickey: 'daccPublickey_0x123_XxX..', // [!code --]
+//   address: "0xYourAccountAddress..", // [!code --]
+//   passwordSecretkey: 'my+Password#123..', // [!code --]
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### daccPublickey (conditional)
+
+- **Type:** `string`
+
+The user's encrypted public key to address.
+
+> *daccPublickey is the most reliable addressing solution and supports all types of data storage using `daccPublickey`.*
+
+:::note
+When using `daccPublickey`, you **must also provide** `passwordSecretkey` to decrypt the wallet., Remove the `account` parameter when using this method.
+:::
+
+```ts
+const tx = await daccSendUSDC({
+//   account: "0xPrivatekey...", // [!code --]
+  daccPublickey: 'daccPublickey_0x123_XxX..', // [!code focus]
+  passwordSecretkey: 'my+Password#123..', // [!code ++]
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### address (optional)
+
+- **Type:** `0x${string}`
+
+The encrypted wallet data returned from `createDaccWallet`.
+
+:::note
+When using `address`, you **must also provide** `passwordSecretkey` to decrypt the wallet. Remove the `account` parameter when using this method. You can use either `address` or `daccPublickey` - both require the same password.
+:::
+
+```ts
+const tx = await daccSendUSDC({
+//   account: "0xPrivatekey...", // [!code --]
+//   daccPublickey: 'daccPublickey_0x123_XxX..', // Match with address
+  address: "0xYourAccountAddress..", // [!code focus] Only the address created is set to `publicEncryption: true`
+  passwordSecretkey: 'my+Password#123..', // [!code ++] 
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### passwordSecretkey (conditional)
+
+- **Type:** `string`
+
+The same password used when creating the wallet.
+
+:::info
+Make sure to use the exact same password that was used with `createDaccWallet`.
+:::
+
+```ts
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: "my+Password#123..", // [!code focus]
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### usdcAddress
+
+- **Type:** `USDCContract`
+
+The USDC contract information object.
+
+```ts
+interface USDCContract {
+  address: `0x${string}`;    // Contract address
+  name: string;              // Token name for EIP-712
+  version: string;           // Contract version for EIP-712
+  decimals?: number;         // Token decimals (default: 6)
+}
+```
+
+:::note
+Different networks have different USDC contract addresses. Make sure to use the correct contract for your target network.
+:::
+
+```ts
+// Base Sepolia USDC
+const usdcBaseSepolia = {
+  address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+  name: 'USDC',
+  version: '2',
+  decimals: 6
+};
+
+// Base Mainnet USDC
+const usdcBase = {
+  address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  name: 'USDC',
+  version: '2'
+  // decimals: 6 (default)
+};
+
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: "my+Password#123..",
+  network: baseSepolia,
+  usdcAddress: usdcBaseSepolia, // [!code focus]
+  to: "0xRecipientAddress..",
+  amount: 10,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### network
+
+- **Type:** `Chain`
+
+The blockchain network object to send the transaction on.
+
+:::note
+Use Chain objects from `viem/chains` (e.g., `base`, `baseSepolia`, `optimism`) or define your own custom chain configuration.
+:::
+
+```ts
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: "my+Password#123..",
+  network: baseSepolia, // [!code focus] used `viem`
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### to
+
+- **Type:** `0x${string}`
+
+The recipient's wallet address.
+
+```ts
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: "my+Password#123..",
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..", // [!code focus]
+  amount: 10,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### amount
+
+- **Type:** `number`
+
+The amount of USDC tokens to send (human-readable format).
+
+:::info
+The amount is automatically converted to the correct decimal format based on the token's `decimals` property (default: 6 for USDC).
+:::
+
+```ts
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: "my+Password#123..",
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10, // [!code focus] Sends 10 USDC
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### validAfter (optional)
+
+- **Type:** `number`
+
+The Unix timestamp after which the authorization becomes valid.
+
+```ts
+const now = Math.floor(Date.now() / 1000);
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: "my+Password#123..",
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  validAfter: Math.floor(Date.now() / 1000), // [!code focus] Valid starting now
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### validBefore (optional)
+
+- **Type:** `number`
+
+The Unix timestamp before which the authorization expires.
+
+```ts
+const now = Math.floor(Date.now() / 1000);
+const oneHour = 3600;
+
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: "my+Password#123..",
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  validBefore: now + oneHour, // [!code focus] Expires in 1 hour
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+```
+
+### gasless
+
+- **Type:** `{ account: 0x${string} }`
+
+The relayer account that will pay for gas fees.
+
+:::warning
+The relayer account must have sufficient native tokens (ETH, etc.) to pay for the transaction gas fees. The relayer submits the transaction but does not need USDC tokens.
+:::
+
+```ts
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: "my+Password#123..",
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipientAddress..",
+  amount: 10,
+  gasless: { // [!code focus]
+    account: 'env_0xRelayerPrivateKey...' // [!code focus] Must have ETH for gas
+  } // [!code focus]
+});
+```
+
+## Examples
+
+### Send USDC using daccPublickey
+
+```ts
+import { daccSendUSDC } from "dacc-js";
+import { base } from "viem/chains";
+
+// Send 1000 USDC to another wallet on Base mainnet
+const transaction = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: 'my+Password#123..',
+  network: base,
+  usdcAddress: {
+    address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base mainnet USDC
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipient..",
+  amount: 1000,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+
+console.log("Transaction sent:", transaction.txHash);
+console.log("Signature:", transaction.signature);
+```
+
+### Send using private key directly
+
+```ts
+import { daccSendUSDC } from "dacc-js";
+import { baseSepolia } from "viem/chains";
+
+// Send USDC using account private key (for testing)
+const tx = await daccSendUSDC({
+  account: "0xPrivatekey...",
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipient..",
+  amount: 50,
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+
+console.log("Test transaction:", tx);
+```
+
+{/* ### Send with custom validity period
+
+```ts
+import { daccSendUSDC } from "dacc-js";
+import { baseSepolia } from "viem/chains";
+
+const now = Math.floor(Date.now() / 1000);
+const oneMinute = 60;
+const oneHour = 3600;
+
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: 'my+Password#123..',
+  network: baseSepolia,
+  usdcAddress: {
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    name: 'USDC',
+    version: '2'
+  },
+  to: "0xRecipient..",
+  amount: 10,
+  validAfter: now + oneMinute, // Valid after 1 minute
+  validBefore: now + oneHour,  // Expires in 1 hour
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+
+console.log("Scheduled transaction:", tx);
+``` */}
+
+### Send with custom token (non-USDC)
+
+```ts
+import { daccSendUSDC } from "dacc-js";
+import { ethereum } from "viem/chains";
+
+// Send custom ERC20 token that supports transferWithAuthorization
+const tx = await daccSendUSDC({
+  daccPublickey: "daccPublickey_0x123_XxX..",
+  passwordSecretkey: 'my+Password#123..',
+  network: ethereum,
+  usdcAddress: {
+    address: '0xCustomTokenAddress...',
+    name: 'Custom Token',
+    version: '1',
+    decimals: 18 // Different decimal places
+  },
+  to: "0xRecipient..",
+  amount: 5.5, // 5.5 tokens
+  gasless: {
+    account: 'env_0xRelayerPrivateKey...'
+  }
+});
+
+console.log("Custom token transaction:", tx);
+```

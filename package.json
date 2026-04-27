@@ -1,6 +1,6 @@
 {
   "name": "dacc-js",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Dacc-js | Decentralized Account Control (DAcc) on Blockchain networks.",
   "license": "GPL-3.0-only",
   "author": "nidz-the-fact",
@@ -23,7 +23,8 @@
     "dapps",
     "typescript",
     "ai",
-    "agent"
+    "agent",
+    "x402"
   ],
   "module": "index.ts",
   "type": "module",
@@ -53,6 +54,9 @@
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.38",
+    "@x402/axios": "2.1.0",
+    "@x402/core": "2.1.0",
+    "@x402/evm": "2.1.0",
     "ai": "^6.0.146",
     "commander": "^14.0.2",
     "libsodium-wrappers-sumo": "^0.8.2",

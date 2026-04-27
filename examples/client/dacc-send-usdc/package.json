@@ -1,0 +1,13 @@
+{
+  "name": "dacc-send-usdc",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "dacc-js": "0.0.7"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

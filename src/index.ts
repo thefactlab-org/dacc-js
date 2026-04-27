@@ -28,3 +28,8 @@ export type { TypeGetBalanceToken, ReturnGetBalanceToken } from "./functions/bal
 
 export { daccAiAgent } from "./functions/ai/daccAiAgent";
 export type { TypeDaccAiAgent } from "./functions/ai/type";
+
+export { daccSendUSDC } from "./functions/x402/daccSendUSDC";
+export type { TypeDaccSendUSDC } from "./functions/x402/daccSendUSDC";
+export { daccX402ClientWithAPI } from "./functions/x402/daccX402ClientWithAPI";
+export type { TypeDaccX402ClientWithAPI, ReturnDaccX402ClientWithAPI } from "./functions/x402/daccX402ClientWithAPI";

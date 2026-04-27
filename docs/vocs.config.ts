@@ -58,6 +58,12 @@ export default defineConfig({
             { text: 'Ai Agent', link: '/functions/dacc-ai/ai-agent' },
             ] 
           },
+          { text: 'Dacc X402', 
+            items: [
+            { text: 'Send USDC', link: '/functions/dacc-x402/send-usdc' },
+            { text: 'Client X402 API', link: '/functions/dacc-x402/client-x402-api' },
+            ] 
+          },
           { text: 'Utilities',
             items: [
             { text: 'Get Balance Native', link: '/functions/utilities/get-balance-native' },

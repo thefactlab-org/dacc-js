@@ -1,5 +1,13 @@
 # dacc-js
 
+## 0.0.7
+
+### Patch Changes
+
+- Update: v0.0.7 - New: x402 Protocol integration.
+    - 1. daccSendUSDC - Send USDC via gasless transferWithAuthorization.
+    - 2. daccX402ClientWithAPI - x402 client for API payments.
+
 ## 0.0.6
 
 ### Patch Changes
