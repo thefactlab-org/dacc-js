@@ -3,7 +3,7 @@ import { optimismSepolia } from "viem/chains";
 
 const balance = await getBalanceToken({
   address: '0x123...',
-  tokenAddress: '0x975bD3D1d5B8bac5769ADc6Ae856649d60fC7b49',
+  tokenAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
   network: optimismSepolia
 });
 

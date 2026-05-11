@@ -25,6 +25,10 @@ export { getBalanceNative } from "./functions/balance/getBalanceNative";
 export type { TypeGetBalanceNative, ReturnGetBalanceNative } from "./functions/balance/getBalanceNative";
 export { getBalanceToken } from "./functions/balance/getBalanceToken";
 export type { TypeGetBalanceToken, ReturnGetBalanceToken } from "./functions/balance/getBalanceToken";
+export { getMulticalBalance } from "./functions/balance/getMulticalBalance";
+export type { TypeGetMulticalBalance, ReturnGetMulticalBalance, ReturnGetMulticalBalanceItem } from "./functions/balance/getMulticalBalance";
+export { getReadContract } from "./functions/read/getReadContract";
+export type { TypeGetReadContract } from "./functions/read/getReadContract";
 
 export { daccAiAgent } from "./functions/ai/daccAiAgent";
 export type { TypeDaccAiAgent } from "./functions/ai/type";

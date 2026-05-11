@@ -1,0 +1,295 @@
+# Get Read Contract (getReadContract) [Read data from any smart contract]
+
+The `getReadContract` function allows you to **call read-only smart contract functions** on any supported EVM network. Use it when you want to fetch onchain data such as token balances, total supply, owner address, configuration values, or any public/view function result. (This is a read-only)
+
+## Import
+
+```ts
+import { getReadContract } from 'dacc-js';
+```
+
+## Usage
+
+```ts
+import { getReadContract } from 'dacc-js';
+import { optimismSepolia } from 'viem/chains'; // used `viem` - npm i viem
+
+const result = await getReadContract({
+  network: optimismSepolia,
+  contractAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
+  abi: contractAbiJSON, // ABI array for the contract OR use parseAbi from viem to parse a subset of the ABI
+  functionName: 'balanceOf',
+  args: ['0x123...'],
+});
+
+console.log(result);
+console.log(result?.data);
+```
+
+### Arguments
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| **`network`** | `Chain` | The blockchain network object to query. |
+| **`contractAddress`** | `0x${string}` | The smart contract address to read from. |
+| **`abi`** | `Abi` | The contract ABI used to decode the function call. |
+| **`functionName`** | `string` | The contract function name to call. |
+| **`args`** (optional) | `any[]` | Optional array of arguments passed to the contract function. |
+| **`blockNumber`** (optional) | `bigint` | Optional block number to read historical state from. |
+| **`blockTag`** (optional) | `BlockTag` | Optional block tag such as `latest`, `safe`, or `finalized`. |
+
+## Return Value
+The response result is an object containing:
+
+```ts
+{
+  chainId: 11155420,
+  contractAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
+  functionName: 'balanceOf',
+  args: ['0x123...'],
+  data: 1000000n
+}
+```
+
+## Parameters
+
+### network
+
+- **Type:** `Chain`
+
+The blockchain network to query. You can use networks from `viem/chains` or define your own custom chain.
+
+```ts
+import { mainnet, optimismSepolia } from 'viem/chains';
+
+const mainnetResult = await getReadContract({
+  network: mainnet, // [!code focus]
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'totalSupply',
+});
+
+const testnetResult = await getReadContract({
+  network: optimismSepolia, // [!code focus]
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'totalSupply',
+});
+```
+
+### contractAddress
+
+- **Type:** `0x${string}`
+
+The smart contract address that exposes the read function you want to call.
+
+```ts
+const result = await getReadContract({
+  network: optimismSepolia,
+  contractAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7', // [!code focus]
+  abi: contractAbi,
+  functionName: 'symbol',
+});
+```
+
+### abi
+
+- **Type:** `Abi`
+
+The contract ABI used by viem to encode the call and decode the returned value.
+
+```ts
+import { parseAbi } from 'viem';
+
+const contractAbi = parseAbi([
+  'function symbol() view returns (string)',
+]);
+
+const result = await getReadContract({
+  network: optimismSepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi, // [!code focus]
+  functionName: 'symbol',
+});
+```
+
+### functionName
+
+- **Type:** `string`
+
+The name of the read function to execute. It must match a function defined in the ABI.
+
+```ts
+const result = await getReadContract({
+  network: optimismSepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'balanceOf', // [!code focus]
+  args: ['0x123...'],
+});
+```
+
+### args (optional)
+
+- **Type:** `any[]`
+
+Optional array of arguments passed to the contract function.
+
+```ts
+const result = await getReadContract({
+  network: optimismSepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'balanceOf',
+  args: ['0x123...'], // [!code focus]
+});
+```
+
+### blockNumber (optional)
+
+- **Type:** `bigint`
+
+Optional block number used to read historical state.
+
+```ts
+const result = await getReadContract({
+  network: optimismSepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'totalSupply',
+  blockNumber: 12345678n, // [!code focus]
+});
+```
+
+### blockTag (optional)
+
+- **Type:** `'latest' | 'earliest' | 'pending' | 'safe' | 'finalized'`
+
+Optional block tag used to control which block state is read. Use `latest` for the most recent block, `earliest` for genesis state, `pending` for pending state, or `safe` and `finalized` when your application needs stronger confirmation guarantees.
+
+```ts
+const result = await getReadContract({
+  network: optimismSepolia,
+  contractAddress: '0xcontract...',
+  abi: contractAbi,
+  functionName: 'totalSupply',
+  blockTag: 'latest', // [!code focus]
+});
+```
+
+## Examples
+
+### Read ERC20 Balance
+
+```ts
+import { getReadContract } from 'dacc-js';
+import { parseAbi } from 'viem';
+import { optimism } from 'viem/chains';
+
+const erc20Abi = parseAbi([
+  'function balanceOf(address owner) view returns (uint256)'
+]);
+
+const result = await getReadContract({
+  network: optimism,
+  contractAddress: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+  abi: erc20Abi,
+  functionName: 'balanceOf',
+  args: ['0x123...'],
+});
+
+console.log(result.data); // bigint balance
+```
+
+### Read Token Metadata
+
+```ts
+import { getReadContract } from 'dacc-js';
+import { parseAbi } from 'viem';
+import { mainnet } from 'viem/chains';
+
+const erc20MetaAbi = parseAbi([
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)'
+]);
+
+const [name, symbol, decimals] = await Promise.all([
+  getReadContract({
+    network: mainnet,
+    contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    abi: erc20MetaAbi,
+    functionName: 'name',
+  }),
+  getReadContract({
+    network: mainnet,
+    contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    abi: erc20MetaAbi,
+    functionName: 'symbol',
+  }),
+  getReadContract({
+    network: mainnet,
+    contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    abi: erc20MetaAbi,
+    functionName: 'decimals',
+  }),
+]);
+
+console.log(name.data, symbol.data, decimals.data);
+```
+
+### Read Historical State by Block Number
+
+```ts
+import { getReadContract } from 'dacc-js';
+import { parseAbi } from 'viem';
+import { mainnet } from 'viem/chains';
+
+const erc20Abi = parseAbi([
+  'function totalSupply() view returns (uint256)'
+]);
+
+const result = await getReadContract({
+  network: mainnet,
+  contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  abi: erc20Abi,
+  functionName: 'totalSupply',
+  blockNumber: 20000000n,
+});
+
+console.log(result.data);
+```
+
+### Use Result in UI
+
+```tsx
+import { useEffect, useState } from 'react';
+import { getReadContract } from 'dacc-js';
+import { parseAbi } from 'viem';
+import { optimismSepolia } from 'viem/chains';
+
+const erc20Abi = parseAbi([
+  'function balanceOf(address owner) view returns (uint256)'
+]);
+
+function TokenBalanceReader({ userAddress }) {
+  const [balance, setBalance] = useState<bigint | null>(null);
+
+  useEffect(() => {
+    async function loadBalance() {
+      const result = await getReadContract({
+        network: optimismSepolia,
+        contractAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [userAddress],
+      });
+
+      setBalance(result.data as bigint);
+    }
+
+    loadBalance();
+  }, [userAddress]);
+
+  return <div>Raw balance: {balance?.toString() ?? 'loading...'}</div>;
+}
+```

@@ -33,47 +33,49 @@ export default defineConfig({
           { text: 'createDaccWallet', link: '/functions/createDaccWallet' },
           { text: 'allowDaccWallet', link: '/functions/allowDaccWallet' },
           { text: 'readDaccWallet', link: '/functions/readDaccWallet' },
-          { text: 'Session Dacc wallet', 
+          { text: 'Session Dacc wallet',
             items: [
             { text: 'Create session Time', link: '/functions/session-wallet/create-time-jwt' },
             { text: 'Verify session Time', link: '/functions/session-wallet/verify-time-jwt' },
-            ] 
+            ]
           },
-          { text: 'Dacc Transactions', 
+          { text: 'Dacc Transactions',
             items: [
             { text: 'Send Native', link: '/functions/dacc-transactions/send-native' },
             { text: 'Send Token', link: '/functions/dacc-transactions/send-token' },
             { text: 'Write Contract', link: '/functions/dacc-transactions/write-contract' },
-            ] 
+            ]
           },
-          { text: 'Dacc Signatures', 
+          { text: 'Dacc Signatures',
             items: [
             { text: 'Sign Message', link: '/functions/dacc-signature/sign-message' },
             { text: 'Sign Typed Data', link: '/functions/dacc-signature/sign-typed-data' },
             { text: 'Sign Authorize EIP-7702', link: '/functions/dacc-signature/sign-authorize-eip7702' },
-            ] 
+            ]
           },
-          { text: 'Dacc Ai', 
+          { text: 'Dacc Ai',
             items: [
             { text: 'Ai Agent', link: '/functions/dacc-ai/ai-agent' },
-            ] 
+            ]
           },
-          { text: 'Dacc X402', 
+          { text: 'Dacc X402',
             items: [
             { text: 'Send USDC', link: '/functions/dacc-x402/send-usdc' },
             { text: 'Client X402 API', link: '/functions/dacc-x402/client-x402-api' },
-            ] 
+            ]
           },
           { text: 'Utilities',
             items: [
             { text: 'Get Balance Native', link: '/functions/utilities/get-balance-native' },
             { text: 'Get Balance Token', link: '/functions/utilities/get-balance-token' },
-            ] 
+            { text: 'Get Multical Balance', link: '/functions/utilities/get-multical-balance' },
+            { text: 'Get Read Contract', link: '/functions/utilities/get-read-contract' },
+            ]
           },
-          { text: 'Integrations', 
+          { text: 'Integrations',
             items: [
             { text: 'x402', link: '/functions/integrations/x402' },
-            ] 
+            ]
           },
         ]
       },
@@ -88,7 +90,7 @@ export default defineConfig({
     },
     {
       icon: "github",
-      link: "https://github.com/thefactlab-org",
+      link: "https://github.com/thefactlab-org/dacc-js",
     }
   ],
   topNav: [

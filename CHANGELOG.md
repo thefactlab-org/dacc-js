@@ -1,12 +1,23 @@
 # dacc-js
 
+## 0.0.8
+
+### Patch Changes
+
+- Add getMulticalBalance and getReadContract utility functions
+
+  - getMulticalBalance: query multiple ERC20 token balances in a single multicall
+  - getReadContract: read data from any smart contract function
+
+  The main theme here is adding two new utility functions: `getMulticalBalance` and `getReadContract`, along with their documentation and examples.
+
 ## 0.0.7
 
 ### Patch Changes
 
 - Update: v0.0.7 - New: x402 Protocol integration.
-    - 1. daccSendUSDC - Send USDC via gasless transferWithAuthorization.
-    - 2. daccX402ClientWithAPI - x402 client for API payments.
+  - 1. daccSendUSDC - Send USDC via gasless transferWithAuthorization.
+  - 2. daccX402ClientWithAPI - x402 client for API payments.
 
 ## 0.0.6
 
