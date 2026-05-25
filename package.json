@@ -1,6 +1,6 @@
 {
   "name": "dacc-js",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Dacc-js | Decentralized Account Control (DAcc) on Blockchain networks.",
   "license": "GPL-3.0-only",
   "author": "nidz-the-fact",
@@ -65,6 +65,6 @@
     "commander": "^14.0.2",
     "libsodium-wrappers-sumo": "^0.8.2",
     "prompts": "^2.4.2",
-    "viem": "^2.38.2"
+    "viem": "^2.50.4"
   }
 }

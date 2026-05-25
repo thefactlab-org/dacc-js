@@ -1,5 +1,14 @@
 # dacc-js
 
+## 0.0.9
+
+### Patch Changes
+
+- Update: v0.0.9 - New: Add contracts parameter for pre-configured read/write contract calls
+
+  - Fix `daccSendToken`
+    - Bug converting number to string with decimals before parsing
+
 ## 0.0.8
 
 ### Patch Changes

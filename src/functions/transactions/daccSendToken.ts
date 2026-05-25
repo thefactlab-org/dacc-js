@@ -20,7 +20,7 @@ export interface TypeDaccSendToken {
  * @description Transfer tokens using either a provided account or by decrypting a Dacc wallet with password.
  *
  * - Docs: https://dacc-js.thefactlab.org/functions/dacc-transactions/send-token
- * 
+ *
  * @param account Conditional: The account to use for signing (Account object is private key).
  * @param address The wallet address (required if using encrypted wallet).
  * @param daccPublickey The encrypted private key (required if using encrypted wallet).
@@ -31,12 +31,12 @@ export interface TypeDaccSendToken {
  * @param network The blockchain network to use for the transaction.
  * @param decimals The token decimals (default: 18).
  * @returns (txHash, chainId, from, to, tokenAddress, amount, decimals)
- * 
+ *
  * @example
  * import { daccSendToken } from "dacc-js";
  * import type { TypeDaccSendToken } from "dacc-js"; // for type
  * import { optimismSepolia } from "viem/chains"; // viem or viem.defineChain({custom...})
- * 
+ *
  * const tx = await daccSendToken({
     // account: "0xPrivatekey...", // Can call with `allowDaccWallet` function
     daccPublickey: 'daccPublickey_0x123_XxX...',
@@ -48,7 +48,7 @@ export interface TypeDaccSendToken {
     amount: 100,
     // decimals: 18
   });
- * 
+ *
  * console.log(tx); // {txHash, chainId, from, to, tokenAddress, amount, decimals}
  * console.log(tx?.txHash); // 0xTransactionHash...
  */
@@ -80,12 +80,13 @@ export async function daccSendToken(options: TypeDaccSendToken) {
 
   const client = createWalletClient({ account, chain: network, transport: http() });
 
+  const amountString = typeof amount === "number" ? amount.toFixed(decimals) : amount;
   const hash = await client.writeContract({
     address: tokenAddress,
     abi: ERC20_ABI,
     functionName: "transfer",
     account,
-    args: [to, parseUnits(amount.toString(), decimals)],
+    args: [to, parseUnits(amountString, decimals)],
   });
 
   return {

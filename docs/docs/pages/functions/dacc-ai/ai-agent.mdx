@@ -3,21 +3,22 @@
 The `daccAiAgent` function creates an AI-powered agent that can **chat and perform blockchain actions** on behalf of the user. The AI can execute transactions, check balances, and interact with smart contracts via natural language.
 
 :::info
-- **daccAiAgent** is currently in **beta** and is an early-stage release. At this stage, it supports **token transfers only**.
+- `daccAiAgent` is currently in **beta**.
 - AI-generated commands may be processed without additional confirmation. Please review all inputs carefully before submitting.
 :::
 
 ## Import
 
-```ts 
+```ts
 import { daccAiAgent } from 'dacc-js';
 ```
 
 ## Usage
 
-```ts 
+```ts
 import { daccAiAgent } from 'dacc-js';
-import { optimismSepolia, baseSepolia } from 'viem/chains';
+import { optimismSepolia, baseSepolia } from 'viem/chains'; // used `viem` - npm i viem
+import { parseAbi } from 'viem'; // Inline Abi helper
 
 const ai = await daccAiAgent({
   daccPublickey: 'daccPublickey_0x123_XxX..',
@@ -26,31 +27,85 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia, baseSepolia],
   tokens: [
     {
-      name: 'Token1',
+      name: 'Token1', // Unique name for the action
       symbol: 'TOK1',
+      decimals: 18, // Optional: defaults to 18
       chain: optimismSepolia,
       address: '0x123...',
     },
     {
-      name: 'Token2',
+      name: 'Token2', // Unique name for the action
       symbol: 'TOK2',
+      decimals: 6, // e.g., USDC uses 6 decimals
       chain: baseSepolia,
       address: '0x234...',
     },
   ],
+  contracts: [ // Optional: Permission custom smart contract execution
+    {
+      name: 'mint-nft-erc1155', // Unique name for the action
+      description: 'Mint an NFT ERC1155', // Optional: description
+      mode: 'write', // write = transaction
+      chain: optimismSepolia,
+      contractAddress: '0xNFTContract...',
+      abi: parseAbi(["function mint(address account, uint256 id, uint256 amount, bytes memory data) public"]), // ABI of the contract
+      functionName: 'mint', // Function to call
+      args: [ // Empty '' = AI will ask for args
+        '', // to
+        0, // tokenId
+        '', // amount
+        '0x', // data = '0x'
+      ],
+    },
+    {
+      name: 'balance-nft-erc1155', // Unique name for the action
+      description: 'Get NFT ERC1155 balance', // Optional: description
+      mode: 'read', // read = view
+      chain: optimismSepolia,
+      contractAddress: '0xNFTContract...',
+      abi: fileImportABI[], // ABI of the contract
+      functionName: 'balanceOf', // Function to call
+      args: [
+        '0xWalletAddress...', // Fixed placeholder in arguments
+        0, // tokenId
+      ],
+    },
+    {
+      name: 'total-supply-nft-erc1155', // Unique name for the action
+      description: 'Get NFT ERC1155 total supply', // Optional: description
+      mode: 'read', // read = view
+      chain: optimismSepolia,
+      contractAddress: '0xNFTContract...',
+      abi: fileImportABI[], // ABI of the contract
+      functionName: 'totalSupply', // Function to call
+      args: [], // None arguments
+    },
+  ],
+  // Optional: system prompt to guide the AI behavior
+  systemPrompt: `
+  - If there is an error, please indicate the command usage.
+  - For chain id 11155420, use the chain name OP Sepolia.
+    URL Explorer: https://testnet-explorer.optimism.io/
+     Address: https://testnet-explorer.optimism.io/address/
+     Tx: https://testnet-explorer.optimism.io/tx/
+  - For chain id 84532, use the chain name Base Sepolia.
+    URL Explorer: https://sepolia.basescan.org/
+     Address: https://sepolia.basescan.org/address/
+     Tx: https://sepolia.basescan.org/tx/
+  `,
 });
 
 // Chat with AI to perform transactions
-const response = await ai.chat("Transfer 0.01 TOK1 to 0xRecipient...");
+const response = await ai.chat("Transfer 0.01 Token1 to 0xRecipient...");
 console.log('AI response:', response.text);
 
 // Stream chat for real-time responses
-const streamResponse = await ai.streamChat("What's my balance of Token2?");
+const streamResponse = await ai.streamChat("Call use mint-nft-erc1155 args 0xWalletAddress.. 1");
 for await (const chunk of streamResponse.textStream) {
   process.stdout.write(chunk);
 }
@@ -59,12 +114,13 @@ for await (const chunk of streamResponse.textStream) {
 ### Arguments
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| **`daccPublickey`** | `string` | The encrypted wallet data from `createDaccWallet`. |
+| **`daccPublickey`** | `string` | Conditional: The encrypted wallet data from `createDaccWallet`. |
 | **`passwordSecretkey`** | `string` | The password for decrypting the wallet. |
-| **`privateKey`** | `0x${string}` | Optional: Direct private key (alternative to daccPublickey + password). |
+| **`privateKey`** | `0x${string}` | Conditional: Direct private key (alternative to daccPublickey + password). |
 | **`llm`** | `LlmConfig` | LLM configuration with `baseURL`, `apiKey`, and `model`. |
 | **`chains`** | `Chain[]` | Array of supported chains (e.g., `[optimismSepolia, baseSepolia]`). |
-| **`tokens`** | `TokenInfo[]` | Array of tokens with `name`, `symbol`, `chain`, and `address`. |
+| **`tokens`** | `TokenInfo[]` | Array of tokens with `name`, `symbol`, `decimals`, `chain`, and `address`. |
+| **`contracts`** | `ContractInfo[]` | Optional: Array of custom smart contract actions with `name`, `description`, `mode`, `chain`, `contractAddress`, `abi[]`, `functionName`, and `args[]`. |
 | **`systemPrompt`** | `string` | Optional: Custom system prompt (defaults to built-in prompt). |
 
 ## Return Value
@@ -77,7 +133,7 @@ The response result is an object containing `{chat, streamChat}` methods.
 
 ## Parameters
 
-### daccPublickey
+### daccPublickey (conditional)
 
 - **Type:** `string`
 
@@ -95,7 +151,7 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia],
   tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
@@ -115,14 +171,14 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia],
   tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
 });
 ```
 
-### privateKey (optional)
+### privateKey (conditional)
 
 - **Type:** `0x${string}`
 
@@ -140,7 +196,7 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia],
   tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
@@ -154,7 +210,15 @@ const ai = await daccAiAgent({
 LLM (Large Language Model) configuration for the AI provider.
 
 :::info
-You can use any AI provider that model supports the **OpenAI-compatible** API only. (e.g [OpenRouter](https://openrouter.ai), and other compatible providers).
+You can use any AI provider that model supports the **OpenAI-compatible** API and must support **tools** or **tool_calls**. (e.g [OpenRouter](https://openrouter.ai), and other compatible providers).
+
+- For lightweight and cheap models, we recommend: <br/>
+    - `openai/gpt-oss-20` <br/>
+    - `deepseek/deepseek-v4-flash` <br/>
+    - `qwen/qwen3-235b-a22b-2507` <br/>
+    - `mistralai/mistral-nemo` <br/>
+    - `nvidia/nemotron-nano-9b-v2` <br/>
+    - `google/gemma-4-26b-a4b-it`
 :::
 
 :::tip
@@ -171,7 +235,7 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1', // [!code focus]
     apiKey: process.env.OPENROUTER_API_KEY!, // [!code focus]
-    model: 'x-ai/grok-4.1-fast', // [!code focus]
+    model: 'openai/gpt-oss-20b', // [!code focus]
   },
   chains: [optimismSepolia],
   tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
@@ -188,9 +252,9 @@ Array of supported blockchain networks from `viem/chains`.
 Supports multiple chains. Specify the target chain in the chat command if more than one is configured.
 :::
 
-::::note[Custom Chain Network] 
+::::note[Custom Chain Network]
 When using [customChain](/concept/mechanical#custom-networks) click to details.
-:::details 
+:::details
 ```ts
 import { defineChain } from "viem";
 
@@ -219,7 +283,7 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia, baseSepolia], // [!code focus]
   tokens: [
@@ -233,10 +297,16 @@ const ai = await daccAiAgent({
 
 - **Type:** `TokenInfo[]`
 
-Array of token configurations with `name`, `symbol`, `chain`, and `address`.
+Array of token configurations with `name`, `symbol`, `decimals`, `chain`, and `address`.
 
 :::note
-Tokens are identified by their name or symbol (case-insensitive), so the AI can reference them naturally in chat (e.g., "send 10 TOK1 [chains] to 0x...").
+- Tokens are identified by their name or symbol (case-insensitive), so the AI can reference them naturally in chat (e.g., "send 10 TOK1 to 0x...").
+- `decimals` is optional and defaults to `18` (e.g., USDC uses `6`).
+:::
+
+:::warning
+- `name` is a unique name used to call, **it cannot be duplicated** (case-insensitive)
+- `address` is the for each token, **it cannot be duplicated within the same chain**
 :::
 
 ```ts
@@ -246,12 +316,72 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia, baseSepolia],
   tokens: [ // [!code focus]
-    { name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }, // [!code focus]
-    { name: 'Token2', symbol: 'TOK2', chain: baseSepolia, address: '0x234...' }, // [!code focus]
+    { name: 'Token1', symbol: 'TOK1', decimals: 18, chain: optimismSepolia, address: '0x123...' }, // [!code focus]
+    { name: 'Token2', symbol: 'TOK2', decimals: 6, chain: baseSepolia, address: '0x234...' }, // [!code focus]
+  ], // [!code focus]
+});
+```
+
+### contracts (optional)
+
+- **Type:** `ContractInfo[]`
+
+Array of custom smart contract configurations with `name`, `description`,  `mode`, `chain`, `contractAddress`, `abi[]`, `functionName`, and `args[]`.
+
+:::note
+The AI agent can read from and write to smart contracts based on your configuration:
+- `name`: Unique identifier that can be used to directly reference
+- `description`: Description of the contract function
+- `mode`: Either `"write"` = execute a transaction or `"read"` = view contract data
+- `chain`: The blockchain network
+- `contractAddress`: The smart contract address
+- `abi[]`: The ABI of the contract
+- `functionName`: The function to execute
+- `args[]`: Optional default arguments (use empty string `""` for AI-filled placeholders)
+:::
+
+:::warning
+- `name` is a unique name used to call, **it cannot be duplicated** (case-insensitive)
+:::
+
+```ts
+import { erc20Abi } from 'viem';
+
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'openai/gpt-oss-20b',
+  },
+  chains: [optimismSepolia],
+  tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
+  contracts: [ // [!code focus]
+    {
+      name: 'opNftMint', // [!code focus]
+      description: 'Mint an OP NFT', // [!code focus]
+      mode: 'write', // [!code focus]
+      chain: optimismSepolia, // [!code focus]
+      contractAddress: '0xNFTContract...', // [!code focus]
+      abi: erc1155Abi, // [!code focus]
+      functionName: 'mint', // [!code focus]
+      args: ['', 0, 1, '0x'], // [!code focus] - Empty '' = AI will ask for args
+    }, // [!code focus]
+    {
+      name: 'opNftBalance', // [!code focus]
+      description: 'Get OP NFT balance', // [!code focus]
+      mode: 'read', // [!code focus]
+      chain: optimismSepolia, // [!code focus]
+      contractAddress: '0xNFTContract...', // [!code focus]
+      abi: erc1155Abi, // [!code focus]
+      functionName: 'balanceOf', // [!code focus]
+      args: ['0xWalletAddress...', 0], // [!code focus] - Fixed arg
+    }, // [!code focus]
   ], // [!code focus]
 });
 ```
@@ -261,7 +391,7 @@ const ai = await daccAiAgent({
 - **Type:** `string`
 - **Default:** Built-in system prompt
 
-Custom system prompt for the AI agent.
+Custom system prompt for the AI agent to guide its behavior.
 
 ```ts
 const ai = await daccAiAgent({
@@ -270,11 +400,15 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia],
   tokens: [{ name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' }],
-  systemPrompt: 'You are a helpful blockchain assistant. Always confirm transactions before executing.', // [!code focus]
+  systemPrompt: // [!code focus]
+  `You are a helpful blockchain assistant.
+  - Always confirm transactions before executing.
+  - If the user asks for a transaction, ask for confirmation.
+  `, // [!code focus]
 });
 ```
 
@@ -292,7 +426,7 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia],
   tokens: [
@@ -317,7 +451,7 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [baseSepolia],
   tokens: [
@@ -343,7 +477,7 @@ const ai = await daccAiAgent({
   llm: {
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: process.env.OPENROUTER_API_KEY!,
-    model: 'x-ai/grok-4.1-fast',
+    model: 'openai/gpt-oss-20b',
   },
   chains: [optimismSepolia],
   tokens: [
@@ -355,3 +489,593 @@ const ai = await daccAiAgent({
 const tokensResponse = await ai.chat('What tokens do I have available?');
 console.log('Available tokens:', tokensResponse.text);
 ```
+
+### Send native coin (e.g., ETH)
+
+```ts
+import { daccAiAgent } from 'dacc-js';
+import { optimismSepolia } from 'viem/chains';
+
+const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'openai/gpt-oss-20b',
+  },
+  chains: [optimismSepolia],
+  tokens: [
+    {
+      name: 'eth', // For native coin
+      symbol: 'ETH',
+      chain: optimismSepolia,
+      address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // address for native coin
+      // decimals: 18,
+    },
+    {
+      name: 'eth-base', // For native coin with different chain
+      symbol: 'ETH',
+      chain: baseSepolia,
+      address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // address for native coin
+      // decimals: 18,
+    },
+    { name: 'Token1', symbol: 'TOK1', chain: optimismSepolia, address: '0x123...' },
+  ],
+});
+
+// Send native token (ETH) to an address
+const nativeResponse = await ai.chat('Send 0.01 ETH to 0xRecipientAddress on optimismSepolia');
+console.log('Native transfer:', nativeResponse.text);
+```
+
+### Advanced Ai agent setup
+
+:::code-group
+
+```ts [app.ts]
+import { ai } from './hook'
+
+const streamResponse = await ai.streamChat("Call use mint-nft-erc1155 args 0xWalletAddress.. 1");
+
+for await (const chunk of streamResponse.textStream) {
+  process.stdout.write(chunk);
+}
+````
+
+```ts [hook.ts]
+import { daccAiAgent } from 'dacc-js';
+import { optimismSepolia } from 'viem/chains';
+import { erc721Abi } from 'viem';
+import { TOKENS } from './folder/tokens'
+import { CONTRACTS } from './folder/contracts'
+
+export const ai = await daccAiAgent({
+  daccPublickey: 'daccPublickey_0x123_XxX..',
+  passwordSecretkey: 'my+Password#123..',
+  llm: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY!,
+    model: 'openai/gpt-oss-20b',
+  },
+  chains: [optimismSepolia],
+  tokens: [...TOKENS],
+  contracts: [...CONTRACTS],
+  systemPrompt: `
+  - If there is an error, please indicate the command usage.
+  - For chain id 11155420, use the chain name OP Sepolia.
+    URL Explorer: https://testnet-explorer.optimism.io/
+     Address: https://testnet-explorer.optimism.io/address/
+     Tx: https://testnet-explorer.optimism.io/tx/
+  - For chain id 84532, use the chain name Base Sepolia.
+    URL Explorer: https://sepolia.basescan.org/
+     Address: https://sepolia.basescan.org/address/
+     Tx: https://sepolia.basescan.org/tx/
+  `
+});
+```
+
+```ts [folder/tokens.ts]
+import { type TypeAiConfigToken } from 'dacc-js';
+import { baseSepolia, optimismSepolia } from 'viem/chains'
+
+export const TOKENS: TypeAiConfigToken[] = [
+  {
+    name: 'eth', // For native coin
+    symbol: 'ETH',
+    chain: optimismSepolia,
+    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // address for native coin
+    // decimals: 18,
+  },
+  {
+    name: 'eth-base', // For native coin with different chain
+    symbol: 'ETH',
+    chain: baseSepolia,
+    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // address for native coin
+    // decimals: 18,
+  },
+  {
+    name: 'USDC', //
+    symbol: 'USDC',
+    chain: optimismSepolia,
+    address: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
+    decimals: 6,
+  },
+  {
+    name: 'usdc-base', //
+    symbol: 'USDC',
+    chain: baseSepolia,
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    decimals: 6,
+  },
+] as const;
+```
+
+```ts [folder/contracts.ts]
+import { type TypeAiConfigContract } from 'dacc-js';
+import { baseSepolia, optimismSepolia } from 'viem/chains'
+import { parseAbi } from 'viem'; // Inline Abi helper
+import { ABI_TS } from './abi'
+
+export const CONTRACTS: TypeAiConfigContract[] = [
+  {
+    name: 'mint-nft-erc1155', // Unique name for the action
+    description: 'Mint an NFT ERC1155', // Optional: description
+    mode: 'write', // write = transaction
+    chain: optimismSepolia,
+    contractAddress: '0xNFTContract...',
+    abi: parseAbi(["function mint(address account, uint256 id, uint256 amount, bytes memory data) public"]), // ABI of the contract
+    functionName: 'mint', // Function to call
+    args: [ // Empty '' = AI will ask for args
+      '', // to
+      0, // tokenId
+      '', // amount
+      '0x', // data = '0x'
+    ],
+  },
+  {
+    name: 'balance-nft-erc1155', // Unique name for the action
+    description: 'Get NFT ERC1155 balance', // Optional: description
+    mode: 'read', // read = view
+    chain: optimismSepolia,
+    contractAddress: '0xNFTContract...',
+    abi: ABI_TS, // ABI of the contract
+    functionName: 'balanceOf', // Function to call
+    args: [
+      '0xWalletAddress...', // Fixed placeholder in arguments
+      0, // tokenId
+    ],
+  },
+  {
+    name: 'total-supply-nft-erc1155', // Unique name for the action
+    description: 'Get NFT ERC1155 total supply', // Optional: description
+    mode: 'read', // read = view
+    chain: optimismSepolia,
+    contractAddress: '0xNFTContract...',
+    abi: ABI_TS, // ABI of the contract
+    functionName: 'totalSupply', // Function to call
+    args: [], // None arguments
+  },
+] as const;
+```
+
+```ts [abi.ts]
+export const ABI_TS = [
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "sender",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "balance",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "needed",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "tokenId",
+        type: "uint256",
+      },
+    ],
+    name: "ERC1155InsufficientBalance",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "approver",
+        type: "address",
+      },
+    ],
+    name: "ERC1155InvalidApprover",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "idsLength",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "valuesLength",
+        type: "uint256",
+      },
+    ],
+    name: "ERC1155InvalidArrayLength",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "operator",
+        type: "address",
+      },
+    ],
+    name: "ERC1155InvalidOperator",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "receiver",
+        type: "address",
+      },
+    ],
+    name: "ERC1155InvalidReceiver",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "sender",
+        type: "address",
+      },
+    ],
+    name: "ERC1155InvalidSender",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "operator",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+    ],
+    name: "ERC1155MissingApprovalForAll",
+    type: "error",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "operator",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "bool",
+        name: "approved",
+        type: "bool",
+      },
+    ],
+    name: "ApprovalForAll",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "operator",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256[]",
+        name: "ids",
+        type: "uint256[]",
+      },
+      {
+        indexed: false,
+        internalType: "uint256[]",
+        name: "values",
+        type: "uint256[]",
+      },
+    ],
+    name: "TransferBatch",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "operator",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "id",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    name: "TransferSingle",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "string",
+        name: "value",
+        type: "string",
+      },
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "id",
+        type: "uint256",
+      },
+    ],
+    name: "URI",
+    type: "event",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "id",
+        type: "uint256",
+      },
+    ],
+    name: "balanceOf",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address[]",
+        name: "accounts",
+        type: "address[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "ids",
+        type: "uint256[]",
+      },
+    ],
+    name: "balanceOfBatch",
+    outputs: [
+      {
+        internalType: "uint256[]",
+        name: "",
+        type: "uint256[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "operator",
+        type: "address",
+      },
+    ],
+    name: "isApprovedForAll",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        internalType: "uint256[]",
+        name: "ids",
+        type: "uint256[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "values",
+        type: "uint256[]",
+      },
+      {
+        internalType: "bytes",
+        name: "data",
+        type: "bytes",
+      },
+    ],
+    name: "safeBatchTransferFrom",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "from",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "id",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+      {
+        internalType: "bytes",
+        name: "data",
+        type: "bytes",
+      },
+    ],
+    name: "safeTransferFrom",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "operator",
+        type: "address",
+      },
+      {
+        internalType: "bool",
+        name: "approved",
+        type: "bool",
+      },
+    ],
+    name: "setApprovalForAll",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes4",
+        name: "interfaceId",
+        type: "bytes4",
+      },
+    ],
+    name: "supportsInterface",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "uri",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
+```
+
+:::

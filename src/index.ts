@@ -31,7 +31,7 @@ export { getReadContract } from "./functions/read/getReadContract";
 export type { TypeGetReadContract } from "./functions/read/getReadContract";
 
 export { daccAiAgent } from "./functions/ai/daccAiAgent";
-export type { TypeDaccAiAgent } from "./functions/ai/type";
+export type { TypeDaccAiAgent, TypeAiConfigToken, TypeAiConfigContract  } from "./functions/ai/type";
 
 export { daccSendUSDC } from "./functions/x402/daccSendUSDC";
 export type { TypeDaccSendUSDC } from "./functions/x402/daccSendUSDC";

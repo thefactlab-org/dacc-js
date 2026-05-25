@@ -1,4 +1,26 @@
-import { type Chain } from "viem";
+import { type Abi } from "viem";
+
+/**
+ * A lightweight chain shape that is structurally compatible with viem chain objects
+ * from any installed copy of viem.
+ *
+ * This avoids TypeScript incompatibilities when the library and the consuming app
+ */
+export interface Chains {
+  /** Numeric chain ID. */
+  id: number;
+  /** Human-readable chain name. */
+  name: string;
+  /** Optional extra viem chain fields are allowed. */
+  [key: string]: unknown;
+}
+
+/**
+ * Contract interaction mode
+ *  - "write": Execute a transaction (e.g., mint, transfer)
+ *  - "read": Read data from the contract (e.g., balanceOf, totalSupply)
+ */
+export type ContractMode = "write" | "read";
 
 /**
  * Configuration options for LLM (Large Language Model) connection
@@ -20,20 +42,56 @@ export interface TokenInfo {
   name: string;
   /** Token symbol (e.g., "OP", "BASE") */
   symbol: string;
+  /** Token decimals (default: 18, e.g., 6 for USDC) */
+  decimals?: number;
   /** Chain this token belongs to */
-  chain: Chain;
+  chain: Chains;
   /** Token contract address */
   address: `0x${string}`;
 }
+
+/**
+ * Convenience alias for a single token configuration
+ */
+export type TypeAiConfigToken = TokenInfo;
+
+/**
+ * Preconfigured smart contract action that the AI is allowed to use
+ */
+export interface ContractInfo {
+  /** Unique name used by the AI to select this contract action */
+  name: string;
+  /** Optional human-readable description for better tool selection */
+  description?: string;
+  /** Contract interaction mode. Required - must be "write" or "read" */
+  mode: ContractMode;
+  /** Chain where this contract is deployed */
+  chain: Chains;
+  /** Smart contract address */
+  contractAddress: `0x${string}`;
+  /** Contract ABI (function) */
+  abi: Abi;
+  /** Function name to execute */
+  functionName: string;
+  /** Optional default arguments for contract functions (**empty '' values are replaced by AI user input**) */
+  args?: unknown[];
+}
+
+/**
+ * Convenience alias for a single contract configuration
+ */
+export type TypeAiConfigContract = ContractInfo;
 
 /**
  * Options for creating an AI instance
  */
 export interface TypeDaccAiAgent {
   /** Array of supported chains (e.g., [optimismSepolia, baseSepolia]) */
-  chains: Chain[];
-  /** Array of supported tokens with name, symbol, chain, and address */
+  chains: Chains[];
+  /** Array of supported tokens with name, symbol, decimals, chain, and address */
   tokens: TokenInfo[];
+  /** Optional allowlist of smart contract actions the AI can "read" or "write" */
+  contracts?: ContractInfo[];
   /** Encrypted public key from createDaccWallet */
   daccPublickey: string;
   /** Password for decrypting the wallet */
