@@ -39,6 +39,18 @@ export default defineConfig({
             { text: 'Verify session Time', link: '/functions/session-wallet/verify-time-jwt' },
             ]
           },
+          { text: 'V2 (New)',
+            items: [
+            { text: 'createDaccWallet V2', link: '/functions/v2/createDaccWallet_V2' },
+            { text: 'allowDaccWallet V2', link: '/functions/v2/allowDaccWallet_V2' },
+            { text: 'Session Dacc wallet V2',
+              items: [
+              { text: 'Create session Time V2', link: '/functions/v2/session-wallet/create-time-jwt-v2' },
+              { text: 'Verify session Time V2', link: '/functions/v2/session-wallet/verify-time-jwt-v2' },
+              ]
+            },
+            ]
+          },
           { text: 'Dacc Transactions',
             items: [
             { text: 'Send Native', link: '/functions/dacc-transactions/send-native' },

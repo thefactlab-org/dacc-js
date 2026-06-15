@@ -1,15 +1,13 @@
 import { privateKeyToAccount } from "viem/accounts";
-import { bytesToHex } from "viem";
-import { readDaccWallet } from "./readDaccWallet";
-import { fromBase58WithPrefix } from "../utils/converts";
-import { getSodium } from "../utils/sodium";
+import { readDaccWallet } from "../readDaccWallet";
+import { decryptWithPassword } from "../../utils/modeV2";
 
-export interface TypeAllowDaccWallet {
+export interface TypeAllowDaccWallet_V2 {
   address: `0x${string}`;
   privateKey: `0x${string}`;
 }
 
-export interface OptionAllowDaccWallet {
+export interface OptionAllowDaccWallet_V2 {
   address?: `0x${string}`;
   daccPublickey?: string;
   passwordSecretkey: string;
@@ -19,7 +17,7 @@ export interface OptionAllowDaccWallet {
  * Decrypt and recover Dacc wallet
  * @description Decrypts `daccPublickey` using `passwordSecretkey` and returns the wallet info.
  *
- * - Docs: https://dacc-js.thefactlab.org/functions/allowDaccWallet
+ * - Docs: https://dacc-js.thefactlab.org/functions/v2/allowDaccWallet_V2
  *
  * @param daccPublickey The encrypted string from {createDaccWallet}
  * @param address The encrypted wallet data returned address from {createDaccWallet}.
@@ -27,10 +25,10 @@ export interface OptionAllowDaccWallet {
  * @returns ({ address, privateKey })
  *
  * @example
- * import { allowDaccWallet } from "dacc-js";
- * import type { TypeAllowDaccWallet } from "dacc-js"; // for type
+ * import { allowDaccWallet_V2 } from "dacc-js";
+ * import type { TypeAllowDaccWallet_V2 } from "dacc-js"; // for type
  *
- * const allow = await allowDaccWallet({
+ * const allow = await allowDaccWallet_V2({
  *   daccPublickey: "daccPublickey_0x123_XxX...",
  *   passwordSecretkey: "my+Password#123..."
  * });
@@ -38,9 +36,9 @@ export interface OptionAllowDaccWallet {
  * console.log(allow); // { address, privateKey }
  * console.log(allow.address, allow.privateKey); // 0x1234abcd... , 0xprivatekey...
  */
-export async function allowDaccWallet(
-  options: OptionAllowDaccWallet
-): Promise<TypeAllowDaccWallet> {
+export async function allowDaccWallet_V2(
+  options: OptionAllowDaccWallet_V2
+): Promise<TypeAllowDaccWallet_V2> {
   let { address, daccPublickey, passwordSecretkey } = options;
 
   if (!daccPublickey) {
@@ -58,32 +56,7 @@ export async function allowDaccWallet(
   }
 
   try {
-    const data = fromBase58WithPrefix(daccPublickey);
-
-    const salt = data.slice(0, 16);
-    const iv = data.slice(16, 28);
-    const encrypted = data.slice(28);
-
-    const sodium = await getSodium();
-    const keyHash = sodium.crypto_pwhash(
-      32,
-      passwordSecretkey,
-      salt,
-      sodium.crypto_pwhash_OPSLIMIT_MODERATE,
-      sodium.crypto_pwhash_MEMLIMIT_MODERATE,
-      sodium.crypto_pwhash_ALG_ARGON2ID13
-    );
-
-    const keyPass = await crypto.subtle.importKey(
-      "raw",
-      Uint8Array.from(keyHash),
-      { name: "AES-GCM" },
-      false,
-      ["decrypt"]
-    );
-
-    const decryptedBuffer = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, keyPass, encrypted);
-    const privateKey = bytesToHex(new Uint8Array(decryptedBuffer)) as `0x${string}`;
+    const { value: privateKey } = await decryptWithPassword(daccPublickey, passwordSecretkey);
     const account = privateKeyToAccount(privateKey);
 
     return {

@@ -1,21 +1,20 @@
 import { privateKeyToAccount } from "viem/accounts";
-import { bytesToHex, hexToBytes } from "viem";
-import { fromBase58WithPrefix, toBase58WithPrefix } from "../utils/converts";
-import { getSodium } from "../utils/sodium";
+import { encryptWithPassword, decryptWithPassword, type EncryptMode } from "../../utils/modeV2";
 
-export interface TypeDaccWalletJWT {
+export interface TypeDaccWalletJWT_V2 {
   address: `0x${string}`;
   privateKey: `0x${string}`;
 }
 
-export interface OptionAllowDaccWalletJWT {
+export interface OptionAllowDaccWalletJWT_V2 {
   daccPublickey: string;
   passwordSecretkey: string;
   jwtSecret: string;
   maxAgeSeconds?: number;
+  encryptMode?: EncryptMode;
 }
 
-export interface OptionVerifyDaccJWT {
+export interface OptionVerifyDaccJWT_V2 {
   jwt: string;
   jwtSecret: string;
 }
@@ -41,76 +40,20 @@ function base64UrlDecode(str: string): Uint8Array {
 const subtle = globalThis.crypto?.subtle;
 if (!subtle) throw new Error("WebCrypto API is not available");
 
-const sodium = await getSodium();
-
 export async function encryptHash(
-  pk: string,
-  password: string
+  pk: `0x${string}`,
+  password: string,
+  mode?: EncryptMode
 ): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-
-  const hash = sodium.crypto_pwhash(
-    32,
-    password,
-    salt,
-    sodium.crypto_pwhash_OPSLIMIT_MODERATE,
-    sodium.crypto_pwhash_MEMLIMIT_MODERATE,
-    sodium.crypto_pwhash_ALG_ARGON2ID13
-  );
-
-  const key = await subtle.importKey(
-    "raw",
-    Uint8Array.from(hash),
-    { name: "AES-GCM" },
-    false,
-    ["encrypt"]
-  );
-
-  const encrypted = await subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    Uint8Array.from(hexToBytes(pk as `0x${string}`))
-  );
-
-  const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
-  combined.set(salt, 0);
-  combined.set(iv, salt.length);
-  combined.set(new Uint8Array(encrypted), salt.length + iv.length);
-
-  return toBase58WithPrefix(combined);
+  return encryptWithPassword(pk, password, mode);
 }
 
 export async function decryptHash(
   encrypted: string,
   password: string
 ): Promise<`0x${string}`> {
-  const data = fromBase58WithPrefix(encrypted);
-  const salt = data.slice(0, 16);
-  const iv = data.slice(16, 28);
-  const encryptedPk = data.slice(28);
-
-  const hash = sodium.crypto_pwhash(
-    32,
-    password,
-    salt,
-    sodium.crypto_pwhash_OPSLIMIT_MODERATE,
-    sodium.crypto_pwhash_MEMLIMIT_MODERATE,
-    sodium.crypto_pwhash_ALG_ARGON2ID13
-  );
-
-  const key = await subtle.importKey(
-    "raw",
-    Uint8Array.from(hash),
-    { name: "AES-GCM" },
-    false,
-    ["decrypt"]
-  );
-
-  const decrypted = await subtle.decrypt({ name: "AES-GCM", iv }, key, encryptedPk);
-  const privateKey = bytesToHex(new Uint8Array(decrypted)) as `0x${string}`;
-
-  return privateKey.startsWith("0x") ? privateKey : (`0x${privateKey}` as `0x${string}`);
+  const { value } = await decryptWithPassword(encrypted, password);
+  return value;
 }
 
 async function signHMAC(payload: string, secret: string): Promise<string> {
@@ -140,33 +83,35 @@ async function verifyHMAC(payload: string, secret: string, signature: string): P
  * Creates a JWT token containing encrypted wallet information for session management.
  * @description Decrypts wallet with user password, re-encrypts with JWT secret, and creates a signed token with expiration.
  *
- * - Docs: https://dacc-js.thefactlab.org/functions/session-wallet/create-time-jwt-v2
+ * - Docs: https://dacc-js.thefactlab.org/functions/v2/session-wallet/create-time-jwt
  *
  * @param daccPublickey The encrypted wallet data, returned from `createDaccWallet`.
  * @param passwordSecretkey User password for decrypting the wallet. Must match the password used with `createDaccWallet`.
  * @param jwtSecret Secret key for JWT signing and encryption. Keep secure and consistent across your application.
  * @param maxAgeSeconds Token expiration time in seconds. Default: 3600 (1 hour).
+ * @param encryptMode Optional: Encryption speed preset used for the JWT-wrapped: `down`, `low`, `fast`, `medium`, or `high` (default: `medium`).
  * @returns JWT token string containing encrypted wallet data.
  *
  * @example
- * import { allowSessionTimeWalletWithJWT } from "dacc-js";
+ * import { allowSessionTimeWalletWithJWT_V2 } from "dacc-js";
  *
- * const jwt = await allowSessionTimeWalletWithJWT({
+ * const jwt = await allowSessionTimeWalletWithJWT_V2({
  *   daccPublickey: 'daccPublickey_0x123_XxX..',
  *   passwordSecretkey: 'my+Password#123..',
  *   jwtSecret: 'jwt-secret-to-app',
+ *   encryptMode: 'fast', // optional (default: 'medium')
  *   // maxAgeSeconds: 3600 // default (1 hour)
  * });
  *
  * console.log(jwt); // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  */
-export async function allowSessionTimeWalletWithJWT(options: OptionAllowDaccWalletJWT): Promise<string> {
-  const { daccPublickey, passwordSecretkey, jwtSecret, maxAgeSeconds = 3600 } = options;
+export async function allowSessionTimeWalletWithJWT_V2(options: OptionAllowDaccWalletJWT_V2): Promise<string> {
+  const { daccPublickey, passwordSecretkey, jwtSecret, maxAgeSeconds = 3600, encryptMode = "medium" } = options;
 
   try {
     const privateKey = await decryptHash(daccPublickey, passwordSecretkey);
     const { address } = privateKeyToAccount(privateKey);
-    const encryptedPk = await encryptHash(privateKey, jwtSecret);
+    const encryptedPk = await encryptHash(privateKey, jwtSecret, encryptMode);
 
     const header = { alg: "HS256", typ: "JWT" };
     const iat = Math.floor(Date.now() / 1000);
@@ -187,16 +132,16 @@ export async function allowSessionTimeWalletWithJWT(options: OptionAllowDaccWall
  * Verifies and extracts wallet information from a JWT token.
  * @description Validates JWT signature, checks expiration, and returns decrypted wallet data.
  *
- * - Docs:https://dacc-js.thefactlab.org/functions/session-wallet/verify-time-jwt-v2
+ * - Docs:https://dacc-js.thefactlab.org/functions/v2/session-wallet/verify-time-jwt
  *
  * @param jwt JWT token string to verify and decode.
- * @param jwtSecret Secret key used for JWT verification. Must match the secret used in allowSessionTimeWalletWithJWT.
+ * @param jwtSecret Secret key used for JWT verification. Must match the secret used in allowSessionTimeWalletWithJWT_V2.
  * @returns Decrypted wallet object with address and private key, or null if invalid/expired.
  *
  * @example
- * import { verifySessionTimeWalletWithJWT } from "dacc-js";
+ * import { verifySessionTimeWalletWithJWT_V2 } from "dacc-js";
  *
- * const walletJWT = await verifySessionTimeWalletWithJWT({
+ * const walletJWT = await verifySessionTimeWalletWithJWT_V2({
  *   jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
  *   jwtSecret: 'jwt-secret-to-app'
  * });
@@ -208,7 +153,7 @@ export async function allowSessionTimeWalletWithJWT(options: OptionAllowDaccWall
  *   console.log('Invalid or expired token');
  * }
  */
-export async function verifySessionTimeWalletWithJWT(options: OptionVerifyDaccJWT): Promise<TypeDaccWalletJWT | null> {
+export async function verifySessionTimeWalletWithJWT_V2(options: OptionVerifyDaccJWT_V2): Promise<TypeDaccWalletJWT_V2 | null> {
   const { jwt, jwtSecret } = options;
   const parts = jwt.split(".");
   if (parts.length !== 3) return null;

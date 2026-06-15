@@ -7,6 +7,14 @@ export type { TypeRequireAddressOrEncrypted, OptionReadDaccWalletNetwork, Option
 export { allowSessionTimeWalletWithJWT, verifySessionTimeWalletWithJWT } from "./functions/sessionTimeWalletWithJWT";
 export type { TypeDaccWalletJWT, OptionAllowDaccWalletJWT, OptionVerifyDaccJWT } from "./functions/sessionTimeWalletWithJWT";
 
+// V2
+export { createDaccWallet_V2 } from "./functions/v2/createDaccWallet_V2";
+export type { TypeCreateDaccWallet_V2, OptionCreateDaccWallet_V2, OptionDataStorageNetwork_V2 } from "./functions/v2/createDaccWallet_V2";
+export { allowDaccWallet_V2 } from "./functions/v2/allowDaccWallet_V2";
+export type { TypeAllowDaccWallet_V2, OptionAllowDaccWallet_V2 } from "./functions/v2/allowDaccWallet_V2";
+export { allowSessionTimeWalletWithJWT_V2, verifySessionTimeWalletWithJWT_V2 } from "./functions/v2/sessionTimeWalletWithJWT_V2";
+export type { TypeDaccWalletJWT_V2, OptionAllowDaccWalletJWT_V2, OptionVerifyDaccJWT_V2 } from "./functions/v2/sessionTimeWalletWithJWT_V2";
+
 export { daccSendNative } from "./functions/transactions/daccSendNative";
 export type { TypeDaccSendNative } from "./functions/transactions/daccSendNative";
 export { daccSendToken } from "./functions/transactions/daccSendToken";

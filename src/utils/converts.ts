@@ -2,8 +2,9 @@ import { bytesToHex, fromHex } from "viem";
 
 export const BASE58_RANDOM = "1234567890ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 export const DACC_PREFIX = "daccPublickey_";
+export const DACC_PREFIX_V2 = "daccPublickeyV2_";
 
-export function toBase58WithPrefix(bytes: Uint8Array, address?: `0x${string}`): string {
+export function toBase58WithPrefix(bytes: Uint8Array, address?: `0x${string}`, prefix: string = DACC_PREFIX): string {
   if (!(bytes instanceof Uint8Array)) throw new TypeError("Invalid bytes input");
 
   let hex = bytesToHex(bytes).slice(2);
@@ -17,14 +18,22 @@ export function toBase58WithPrefix(bytes: Uint8Array, address?: `0x${string}`): 
   }
 
   const addPart = address ? `${address}_` : "";
-  return `${DACC_PREFIX}${addPart}${encoded || "1"}`;
+  return `${prefix}${addPart}${encoded || "1"}`;
+}
+
+function detectPrefix(str: string): string {
+  if (str.startsWith(DACC_PREFIX_V2)) return DACC_PREFIX_V2;
+  if (str.startsWith(DACC_PREFIX)) return DACC_PREFIX;
+  return "";
 }
 
 export function fromBase58WithPrefix(str: string): Uint8Array {
-  if (!str.startsWith(DACC_PREFIX)) throw new Error("Invalid prefix");
+  const matchedPrefix = detectPrefix(str);
+  if (!matchedPrefix) throw new Error("Invalid prefix");
 
-  const parts = str.split("_");
-  const base58Part = parts.length === 2 ? parts[1] : parts.length >= 3 ? parts.slice(2).join("_") : "";
+  const afterPrefix = str.slice(matchedPrefix.length);
+  const parts = afterPrefix.split("_");
+  const base58Part = parts.length === 1 ? parts[0] : parts.slice(1).join("_");
   if (!base58Part) throw new Error("Invalid Base58 format (empty payload)");
 
   let num = 0n;

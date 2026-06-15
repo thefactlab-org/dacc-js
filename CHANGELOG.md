@@ -1,5 +1,25 @@
 # dacc-js
 
+## 0.1.1
+
+### Patch Changes
+
+- New: Add V2 Dacc wallet functions and update docs (for V2 is designed for third-party / external APIs that require low latency and fast processing. Use encryptMode to tune the speed-security tradeoff.)
+
+  - Add V2 exports for createDaccWallet, allowDaccWallet, and session wallet functions
+  - Add DACC_PREFIX_V2 constant and update utility functions to support multiple prefixes
+
+  - Fix: Clean-up size package
+
+## 0.1.0
+
+### Patch Changes
+
+New: Add V2 Dacc wallet functions and update docs (for V2 is designed for third-party / external APIs that require low latency and fast processing. Use encryptMode to tune the speed-security tradeoff.)
+
+- Add V2 exports for createDaccWallet, allowDaccWallet, and session wallet functions
+- Add DACC_PREFIX_V2 constant and update utility functions to support multiple prefixes
+
 ## 0.0.9
 
 ### Patch Changes
